@@ -8,7 +8,8 @@ from loguru import logger
 from PluginFrame.PluginManager import PluginManager
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config, botManager
-bot = aiocqhttp.CQHttp()
+
+bot = aiocqhttp.CQHttp(api_root=config.onebot.cq_http_url)
 
 
 class MessageDispose:

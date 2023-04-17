@@ -1,29 +1,29 @@
-import requests
+from aiocqhttp import MessageSegment
+from typing import Optional, Union, Any
+from cqhttp.api import CQApiConfig
+from platforms.onebot import bot
 from pydantic import BaseModel
-from typing import Optional, List, Union, Any
-from config import Config
-from cqhttp import SendMsgModel
 
 
 class SendRequest(BaseModel):
 
-    async def send_request(self, api: str, echo=''):
-        if Config.cqhttp.cqType == 'http':
-            res = requests.post(
-                url=f'http://{Config.cqhttp.http.host}:{Config.cqhttp.http.port}/{api}',
-                json=self.dict()
-            )
-            return res.json()
-        if Config.cqhttp.cqType == "ws":
-            _ = SendMsgModel(action=api, params=self.dict(), echo='')
-            return await manager.send_personal_message(_.dict(), connections.get_first_connection())
-        return
+    async def send_request(self, api: str):
+        return await bot.call_action(
+            api,
+            **self.dict()
+        )
+
+    async def del_message(self, message_id):
+        return await bot.call_action(
+            CQApiConfig.message.delete_msg.Api,
+            {'message_id': message_id}
+        )
 
 
 class SendPrivateMsgRequest(SendRequest):
     user_id: int
     group_id: Optional[int]
-    message: Union[str, dict, list[dict]]
+    message: Any
     auto_escape: bool = False
 
 
@@ -34,7 +34,7 @@ class SendPrivateNodeMsgRequest(SendRequest):
 
 class SendGroupMsgRequest(SendRequest):
     group_id: int
-    message: Union[str, dict, list[dict]]
+    message: Any
     auto_escape: bool = False
 
 

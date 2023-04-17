@@ -9,9 +9,9 @@ from loguru import logger
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugins_conf import registration_directive
 from config import Config
+from constants import config
 from cqhttp.api import CQApiConfig
-from cqhttp.cq_code import CqReply, CqNode, CqImage
-from cqhttp.request_model import DeleteMsgRequest, SendGroupMsgRequest, SendPrivateMsgRequest
+from cqhttp.request_model import SendRequest, MessageSegment
 
 token = None
 
@@ -22,70 +22,63 @@ class AiImagePlugin(BaseComponentPlugin):
 
     async def start(self, message_parameter):
         # 调用GPT-3聊天机器人
-        message_info = message_parameter.get("message_info")
         re_obj = message_parameter.get("re_obj")
-        sender = message_info.get("sender")
-        message_id = message_info.get("message_id")
+        event = message_parameter.get("event")
+        sender = event.sender
+        message_id =event.message_id
         # 调用GPT-3聊天机器人
 
-        if message_info.get("message_type") == "group":
+        if event.get("message_type") == "group":
             logger.info(
                 f"收到Ai绘画消息：{re_obj.group(1)}"
             )
-            if Config.cqhttp.cqType == "http":
-                wait = f"""{CqReply(message_info.get("message_id")).cq} 请稍后..."""
-                wait_message = await self.send_group_msg(message_info.get("group_id"), wait)
-                avatar_str = self.ai_painting(re_obj.group(1))
-                time.sleep(2)
-                wait_message = wait_message.get("data")
-                await DeleteMsgRequest(message_id=wait_message.get("message_id")).send_request(
-                    CQApiConfig.message.delete_msg.Api
-                )
-            else:
-                avatar_str = self.ai_painting(re_obj.group(1))
+
+            wait_info = await self.send_wait(self.send_group_msg, group_id=event.get("group_id"))(
+                event.get("message_id"), "请稍后..."
+            )
+            avatar_str = self.ai_painting(re_obj.group(1))
+            await self.del_wait(wait_info.get("message_id"))
 
             if avatar_str == -6:
-                await self.send_group_msg(message_info.get("group_id"), "绘画失败，包含非法字符！")
+                await self.send_group_msg(event.get("group_id"), "绘画失败，包含非法字符！")
                 return
 
             avatar_str = base64.b64decode(avatar_str)
-            image_cq = CqReply(id=message_id).cq + " " + CqImage(
-                file="base64://" + base64.b64encode(avatar_str).decode()
-            ).cq
-            await self.send_group_msg(message_info.get("group_id"), image_cq)
+            image_cq = MessageSegment.reply(id_=message_id).__add__(
+                MessageSegment.image(
+                    file="base64://" + base64.b64encode(avatar_str).decode()
+                )
+            )
+            await self.send_group_msg(event.get("group_id"), str(image_cq))
 
-        elif message_info.get("message_type") == "private":
+        elif event.get("message_type") == "private":
             logger.info(
                 f"收到Ai绘画消息：{re_obj.group(1)}"
             )
-            if Config.cqhttp.cqType == "http":
-                wait = f"""{CqReply(message_info.get("message_id")).cq} 请稍后..."""
-                wait_message = await self.send_private_msg(sender.get("user_id"), wait)
-                avatar_str = self.ai_painting(re_obj.group(1))
-                time.sleep(2)
-                wait_message = wait_message.get("data")
-                await DeleteMsgRequest(message_id=wait_message.get("message_id")).send_request(
-                    CQApiConfig.message.delete_msg.Api
-                )
-            else:
-                avatar_str = self.ai_painting(re_obj.group(1))
+            wait_info = await self.send_wait(self.send_private_msg, user_id=event.user_id)(
+                event.get("message_id"), "请稍后..."
+            )
+            avatar_str = self.ai_painting(re_obj.group(1))
+            await self.del_wait(wait_info.get("message_id"))
 
             if avatar_str == -6:
-                await self.send_private_msg(message_info.get("user_id"), "绘画失败，包含非法字符！")
+                await self.send_private_msg(event.get("user_id"), "绘画失败，包含非法字符！")
                 return
 
             avatar_str = base64.b64decode(avatar_str)
-            image_cq = CqReply(id=message_id).cq + " " + CqImage(
-                file="base64://" + base64.b64encode(avatar_str).decode()
-            ).cq
-            await self.send_private_msg(sender.get("user_id"), image_cq)
+            image_cq = MessageSegment.reply(id_=message_id).__add__(
+                MessageSegment.image(
+                    file="base64://" + base64.b64encode(avatar_str).decode()
+                )
+            )
+            await self.send_private_msg(sender.get("user_id"), str(image_cq))
 
     def get_token(self):
         global token
         if not token:
             res = requests.get(
                 "https://flagopen.baai.ac.cn/flagStudio/auth/getToken",
-                headers={"Accept": "application/json"}, params={"apikey": Config.baai.apiKey}
+                headers={"Accept": "application/json"}, params={"apikey": config.baai.apiKey}
             )
             logger.info("获取绘画Token")
             if res.status_code == 200:

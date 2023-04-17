@@ -7,6 +7,7 @@ from loguru import logger
 
 bash_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
 class PluginManager(type):
     # 静态变量配置插件路径
     __PluginPath = 'Plugins'
