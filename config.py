@@ -176,6 +176,9 @@ class BingAuths(BaseModel):
     show_remaining_count: bool = True
     """在 Bing 的回复后加上剩余次数"""
 
+    use_drawing: bool = False
+    """使用 Bing 画图"""
+
     wss_link: str = "wss://sydney.bing.com/sydney/ChatHub"
     """Bing 的 Websocket 接入点"""
     bing_endpoint: str = "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
@@ -399,8 +402,6 @@ class BaiduCloud(BaseModel):
     """不合规消息自定义返回"""
 
 
-
-
 class Preset(BaseModel):
     command: str = r"加载预设 (\w+)"
     keywords: dict[str, str] = {}
@@ -408,7 +409,6 @@ class Preset(BaseModel):
     scan_dir: str = "./presets"
     hide: bool = False
     """是否禁止使用其他人 .预设列表 命令来查看预设"""
-
 
 
 class Ratelimit(BaseModel):
@@ -420,6 +420,19 @@ class Ratelimit(BaseModel):
 
     exceed: str = "已达到额度限制，请等待下一小时继续和我对话。"
     """超额消息"""
+
+
+class SDWebUI(BaseModel):
+    api_url: str
+    """API 基地址，如：http://127.0.0.1:7890"""
+    prompt_prefix: str = 'masterpiece, best quality, illustration, extremely detailed 8K wallpaper'
+    """内置提示词，所有的画图内容都会加上这些提示词"""
+    negative_prompt: str = 'NG_DeepNegative_V1_75T, badhandv4, EasyNegative, bad hands, missing fingers, cropped legs, worst quality, low quality, normal quality, jpeg artifacts, blurry,missing arms, long neck, Humpbacked,multiple breasts, mutated hands and fingers, long body, mutation, poorly drawn , bad anatomy,bad shadow,unnatural body, fused breasts, bad breasts, more than one person,wings on halo,small wings, 2girls, lowres, bad anatomy, text, error, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, out of frame, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, nsfw, nake, nude, blood'
+    """负面提示词"""
+    sampler_index: str = 'DPM++ SDE Karras'
+    filter_nsfw: bool = True
+    timeout: float = 10.0
+    """超时时间"""
 
 
 class Baai(BaseModel):
@@ -453,6 +466,9 @@ class Config(BaseModel):
     ratelimit: Ratelimit = Ratelimit()
     baiducloud: BaiduCloud = BaiduCloud()
     vits: VitsConfig = VitsConfig()
+
+    # === External Utilities ===
+    sdwebui: Optional[SDWebUI] = None
     baai: Baai = Baai()
 
     def scan_presets(self):
@@ -481,10 +497,10 @@ class Config(BaseModel):
                 else:
                     raise ValueError("无法识别预设的 JSON 格式，请检查编码！")
 
-        except KeyError:
-            raise ValueError("预设不存在！")
-        except FileNotFoundError:
-            raise ValueError("预设文件不存在！")
+        except KeyError as e:
+            raise ValueError("预设不存在！") from e
+        except FileNotFoundError as e:
+            raise ValueError("预设文件不存在！") from e
         except Exception as e:
             logger.exception(e)
             logger.error("配置文件有误，请重新修改！")

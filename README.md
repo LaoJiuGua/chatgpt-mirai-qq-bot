@@ -156,7 +156,7 @@ python3 bot.py
 </details>
 
 **[广告] 免费 OpenAI API Key**  
-<img src=https://user-images.githubusercontent.com/50035229/229976556-99e8ac26-c8c3-4f56-902d-a52a7f2e50d5.png width=300px />  
+<img src=https://user-images.githubusercontent.com/8984680/232325002-c3e4550e-f642-45fc-b51c-f570386721c3.png width=300px />  
 你可以在[这里获取免费的 OpenAI API Key](https://freeopenai.xyz/) 测试使用。
 ## 🕸 HTTP API
 
@@ -193,12 +193,76 @@ debug = false
 **响应格式**
 |参数名|类型|说明|
 |:---|:---|:---|
-|message| String |返回信息，HTML 格式|  
+|result| String |SUCESS,DONE,FAILED|
+|message| String[] |文本返回，支持多段返回|
+|voice| String[] |音频返回，支持多个音频的base64编码；参考：data:audio/mpeg;base64,...|
+|image| String[] |图片返回，支持多个图片的base64编码；参考：data:image/png;base64,...|
 
 **响应示例**  
 ```json
 {
-    "message": "pong!"
+    "result": "DONE",
+    "message": ["pong!"],
+    "voice": [],
+    "image": []
+}
+```
+
+**POST**    `/v2/chat`  
+
+**请求参数**  
+
+|参数名|必选|类型|说明|
+|:---|:---|:---|:---|
+|session_id| 是 | String |会话ID，默认：`friend-default_session`|
+|username| 是 | String |用户名，默认：`某人`|
+|message| 是 | String |消息，不能为空|  
+
+**请求示例**
+```json
+{
+    "session_id": "friend-123456",
+    "username": "testuser",
+    "message": "ping"
+}
+```
+**响应格式**
+字符串：request_id
+
+**响应示例**  
+```
+1681525479905
+```
+
+**GET**    `/v2/chat/response`  
+
+**请求参数**  
+
+|参数名|必选|类型|说明|
+|:---|:---|:---|:---|
+|request_id| 是 | String |请求id，/v2/chat返回的值|
+
+**请求示例**
+```
+/v2/chat/response?request_id=1681525479905
+```
+**响应格式**
+|参数名|类型|说明|
+|:---|:---|:---|
+|result| String |SUCESS,DONE,FAILED|
+|message| String[] |文本返回，支持多段返回|
+|voice| String[] |音频返回，支持多个音频的base64编码；参考：data:audio/mpeg;base64,...|
+|image| String[] |图片返回，支持多个图片的base64编码；参考：data:image/png;base64,...|
+
+* 每次请求返回增量并清空。DONE、FAILED之后没有更多返回。
+
+**响应示例**  
+```json
+{
+    "result": "DONE",
+    "message": ["pong!"],
+    "voice": ["data:audio/mpeg;base64,..."],
+    "image": ["data:image/png;base64,...", "data:image/png;base64,..."]
 }
 ```
 </details>
