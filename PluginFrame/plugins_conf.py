@@ -47,6 +47,7 @@ class DirectivesField:
     matching: str = '.*'
     plugin_name: str = None
     message_types: tuple = ("private", "group")
+    permissions: tuple = ("all",)
 
 
 class PluginMatching(metaclass=DirectivesPluginMeta):
@@ -62,13 +63,15 @@ class PluginMatching(metaclass=DirectivesPluginMeta):
 #     findApiLines = DirectivesField(matching=r'\.查询API额度', plugin_name="findApiLines", message_types=("private", ))
 
 
-def registration_directive(matching: str, message_types: tuple):
+def registration_directive(matching: str, message_types: tuple, permissions: tuple = ("all",)):
     def wrapper(cls):
         plugin_name = cls.__name__
         setattr(
             PluginMatching,
             plugin_name,
-            DirectivesField(matching=matching, plugin_name=plugin_name, message_types=message_types)
+            DirectivesField(
+                matching=matching, plugin_name=plugin_name, message_types=message_types, permissions=permissions
+            )
         )
         logger.info(f"注册{','.join(message_types)}指令：{plugin_name} - {matching}")
     return wrapper

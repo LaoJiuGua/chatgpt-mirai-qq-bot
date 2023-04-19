@@ -9,7 +9,7 @@ from PluginFrame.PluginManager import PluginManager
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config, botManager
 
-bot = aiocqhttp.CQHttp(api_root=config.onebot.cq_http_url)
+bot = aiocqhttp.CQHttp()
 
 
 class MessageDispose:
@@ -29,10 +29,21 @@ class MessageDispose:
         if not ma_obj:
             return
 
-        if plugin := PluginManager.get_plugin_by_name(ma_obj.plugin_name):
+        if 'all' in ma_obj.permissions:
+            ...
+        elif 'admin' in ma_obj.permissions:
+            if event.user_id != config.onebot.manager_qq:
+                return await bot.send(event, "您没有权限执行这个操作")
+        else:
+            if event.user_id in ma_obj.permissions:
+                ...
+            else:
+                return await bot.send(event, "您没有权限执行这个操作")
 
+        if plugin := PluginManager.get_plugin_by_name(ma_obj.plugin_name):
             # 传递参数
             self.plugin_parameter["event"] = event
+            self.plugin_parameter["bot"] = bot
             self.plugin_parameter["re_obj"] = re_obj
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
@@ -47,11 +58,23 @@ class MessageDispose:
         if not ma_obj:
             return
 
+        if 'all' in ma_obj.permissions:
+            ...
+        elif 'admin' in ma_obj.permissions:
+            if event.user_id != config.onebot.manager_qq:
+                return await bot.send(event, "您没有权限执行这个操作")
+        else:
+            if event.user_id in ma_obj.permissions:
+                ...
+            else:
+                return await bot.send(event, "您没有权限执行这个操作")
+
         if plugin := PluginManager.get_plugin_by_name(ma_obj.plugin_name):
 
             # 传递参数
             self.plugin_parameter["event"] = event
             self.plugin_parameter["re_obj"] = re_obj
+            self.plugin_parameter["bot"] = bot
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")

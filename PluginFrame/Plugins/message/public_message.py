@@ -16,7 +16,7 @@ from platforms.onebot_bot import transform_from_message_chain
 from utils.text_to_img import to_image
 
 
-@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"))
+@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"), permissions=("admin",))
 class DouYinBellePlugin(BaseComponentPlugin):
     __name__ = 'DouYinBellePlugin'
 
@@ -53,7 +53,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         return url
 
 
-@registration_directive(matching=r'^#(ping|Ping) (.*)', message_types=("private", "group"))
+@registration_directive(matching=r'^#(ping|Ping) (.*)', message_types=("private", "group"), permissions=("admin",))
 class PingHostPlugin(BaseComponentPlugin):
     __name__ = 'PingHostPlugin'
 
@@ -111,7 +111,7 @@ class PingHostPlugin(BaseComponentPlugin):
         return status, data
 
 
-@registration_directive(matching=r'^#舔狗', message_types=("private", "group"))
+@registration_directive(matching=r'^#舔狗', message_types=("private", "group"), permissions=("all",))
 class AnimeWallpapersPlugin(BaseComponentPlugin):
     __name__ = 'AnimeWallpapersPlugin'
 
@@ -162,7 +162,7 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
         return text[0]
 
 
-@registration_directive(matching=r'^#今日热点', message_types=("private", "group"))
+@registration_directive(matching=r'^#今日热点', message_types=("private", "group"), permissions=("admin",))
 class TodayHotSpotPlugin(BaseComponentPlugin):
     __name__ = 'TodayHotSpotPlugin'
 

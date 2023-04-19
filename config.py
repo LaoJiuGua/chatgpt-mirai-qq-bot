@@ -17,8 +17,6 @@ class Onebot(BaseModel):
     """go-cqhttp 的 反向 ws 主机号"""
     reverse_ws_port: Optional[int] = None
     """go-cqhttp 的 反向 ws 端口号，填写后开启 反向 ws 模式"""
-    cq_http_url: Optional[str] = "http://127.0.0.1:5700/"
-    """go-cqhttp 的 url"""
 
 
 class Mirai(BaseModel):

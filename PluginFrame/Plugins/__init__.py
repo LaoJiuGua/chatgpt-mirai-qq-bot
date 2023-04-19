@@ -1,6 +1,5 @@
 import time
 from asyncio.log import logger
-
 from aiocqhttp import MessageSegment
 from graia.amnesia.message import MessageChain
 
@@ -10,6 +9,7 @@ from cqhttp.api import CQApiConfig
 from cqhttp.request_model import SendGroupMsgRequest, SendPrivateMsgRequest, SendGroupNodeMsgRequest, \
     SendPrivateNodeMsgRequest, DeleteMsgRequest
 from platforms.onebot_bot import transform_from_message_chain
+from graia.ariadne.message.element import Image, Plain, Voice
 
 
 class BaseComponentPlugin(ModelComponent):
@@ -70,9 +70,14 @@ class BaseComponentPlugin(ModelComponent):
         async def respond(resp):
             logger.debug(f"[OneBot] 尝试发送消息：{str(resp)}")
             try:
-                if not isinstance(resp, MessageChain):
+                if not isinstance(resp, (MessageChain, Image, Plain, Voice)):
                     resp = MessageChain(resp)
-                resp = transform_from_message_chain(resp)
+
+                if isinstance(resp, Image):
+                    resp = MessageSegment.image(f"base64://{resp.base64}")
+                else:
+                    resp = transform_from_message_chain(resp)
+
                 if config.response.quote and '[CQ:record,file=' not in str(resp):  # skip voice
                     resp = MessageSegment.reply(event.message_id) + resp
                 if is_group:
