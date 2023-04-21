@@ -16,7 +16,7 @@ from platforms.onebot_bot import transform_from_message_chain
 from utils.text_to_img import to_image
 
 
-@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"), permissions=("admin",))
+@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"), permissions=("all",))
 class DouYinBellePlugin(BaseComponentPlugin):
     __name__ = 'DouYinBellePlugin'
 
@@ -125,8 +125,9 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
                 message_info.get("message_id"), "请稍后..."
             )
             await self.del_wait(wait_info.get("message_id"))
-
-            data = MessageSegment.reply(message_info.get('message_id')).text(self.get_tiangou_info())
+            data = MessageSegment.reply(message_info.get('message_id')).__add__(
+                MessageSegment.text(self.get_tiangou_info())
+            )
             await self.send(self.send_group_msg, user_id=message_info.get("group_id"))(
                 message=str(data)
             )
