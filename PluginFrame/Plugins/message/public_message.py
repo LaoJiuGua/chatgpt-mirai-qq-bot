@@ -24,8 +24,6 @@ class DouYinBellePlugin(BaseComponentPlugin):
 
         message_info = message_parameter.get("event")
         sender = message_info.sender
-        # 调用GPT-3聊天机器人
-
         message = MessageSegment.video(self.get_girl_url())
         if message_info.get("message_type") == "group":
             logger.info(
@@ -42,8 +40,8 @@ class DouYinBellePlugin(BaseComponentPlugin):
                 CQApiConfig.message.send_private_msg.Api
             )
 
-    def get_girl_url(self):
-
+    @staticmethod
+    def get_girl_url():
         resp = requests.get("http://xin-hao.top/sqlWork/randomDouyin")
         try:
             url = resp.history[1].url
@@ -119,8 +117,6 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
 
         message_info = message_parameter.get("event")
         sender = message_info.sender
-        # 调用GPT-3聊天机器人
-
         if message_info.get("message_type") == "group":
             logger.info(
                 f"收到群组({message_info.get('group_id')})消息：{sender.get('nickname')}({sender.get('user_id')})---->{message_info.get('message')}"
@@ -130,9 +126,8 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
             )
             await self.del_wait(wait_info.get("message_id"))
 
-            data = MessageSegment.reply(message_info.get('message_id')).text(self.get_girl_url())
-
-            await self.send(self.send_group_msg, user_id=message_info.get("user_id"))(
+            data = MessageSegment.reply(message_info.get('message_id')).text(self.get_tiangou_info())
+            await self.send(self.send_group_msg, user_id=message_info.get("group_id"))(
                 message=str(data)
             )
 
@@ -147,13 +142,15 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
             await self.del_wait(wait_info.get("message_id"))
 
             data = MessageSegment.reply(message_info.get('message_id')).__add__(
-                MessageSegment.text(self.get_girl_url()))
+                MessageSegment.text(self.get_tiangou_info())
+            )
 
             await self.send(self.send_private_msg, user_id=message_info.get("user_id"))(
                 message=str(data)
             )
 
-    def get_girl_url(self):
+    @staticmethod
+    def get_tiangou_info():
         try:
             resp = requests.get("https://v.api.aa1.cn/api/tiangou/")
             text = re.findall(r"<p>(.*?)</p>", resp.text)
