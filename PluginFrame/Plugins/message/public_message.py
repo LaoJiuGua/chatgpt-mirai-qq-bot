@@ -142,7 +142,7 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
     @staticmethod
     def get_tiangou_info():
         try:
-            resp = requests.get("https://v.api.aa1.cn/api/tiangou/")
+            resp = requests.get("https://v.api.aa1.cn/api/tiangou/", timeout=10)
             text = re.findall(r"<p>(.*?)</p>", resp.text)
         except:
             text = ["接口似乎出现问题了！！"]
