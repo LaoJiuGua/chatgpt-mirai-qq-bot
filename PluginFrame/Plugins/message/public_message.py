@@ -212,8 +212,7 @@ class ImageVariationPlugin(BaseComponentPlugin):
         info = await GetMessage(message_id=message_id).send_request(api=CQApiConfig.message.get_msg.Api)
         if not info: return
         message_data = info.get("message")
-        cq, file, url = re.match("\[CQ:(.*),file=(.*),url=(.*)]", message_data).groups()
-        if cq != "image": return
+        url = re.match(r"(| )\[CQ:image.*url=(.*)]", message_data).group(2)
         image_data, fmt = self.download_image(url)
         img_b64 = self.image_zoom(image_data, number, im_type, fmt=fmt)
         if not img_b64:
