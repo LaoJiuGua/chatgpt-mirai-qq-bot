@@ -1,19 +1,14 @@
+import base64
+import io
 import re
-import time
+from io import BytesIO
 import requests
 from loguru import logger
-
-from PluginFrame.PluginManager import ModelComponent
+from PIL import Image
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugins_conf import registration_directive
-from config import Config
-from cqhttp import SendMsgModel
 from cqhttp.api import CQApiConfig
-from cqhttp.request_model import SendRequest, MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, \
-    DeleteMsgRequest
-from platforms.onebot_bot import transform_from_message_chain
-
-from utils.text_to_img import to_image
+from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
 
 
 @registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"), permissions=("all",))
@@ -26,16 +21,10 @@ class DouYinBellePlugin(BaseComponentPlugin):
         sender = message_info.sender
         message = MessageSegment.video(self.get_girl_url())
         if message_info.get("message_type") == "group":
-            logger.info(
-                f"收到群组({message_info.get('group_id')})消息：{sender.get('nickname')}({sender.get('user_id')})---->{message_info.get('message')}"
-            )
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
             )
         elif message_info.get("message_type") == "private":
-            logger.info(
-                f"收到私人消息：{sender.get('nickname')}({sender.get('user_id')})---->{message_info.get('message')}"
-            )
             await SendPrivateMsgRequest(user_id=sender.get("user_id"), message=message).send_request(
                 CQApiConfig.message.send_private_msg.Api
             )
@@ -160,7 +149,7 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
         return text[0]
 
 
-@registration_directive(matching=r'^#今日热点', message_types=("private", "group"), permissions=("admin",))
+@registration_directive(matching=r'^#今日热点', message_types=("private", "group"), permissions=("all",))
 class TodayHotSpotPlugin(BaseComponentPlugin):
     __name__ = 'TodayHotSpotPlugin'
 
@@ -209,3 +198,67 @@ class TodayHotSpotPlugin(BaseComponentPlugin):
         except:
             _dict_list = [MessageSegment.node_custom(nickname="北.", user_id=1113855149, content=f"接口似乎出现问题了！！")]
         return _dict_list
+
+
+@registration_directive(matching=r'^\[CQ:reply,id=(-\d+|\d+)\](\[CQ:at,qq=(\d+)\]|)(| )(放大|缩小)(\d{1})倍',
+                        message_types=("private", "group"), permissions=("all",))
+class ImageVariationPlugin(BaseComponentPlugin):
+    __name__ = 'ImageVariationPlugin'
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        message_id, _, qq, _, im_type, number = message_parameter.get("re_obj").groups()
+        info = await GetMessage(message_id=message_id).send_request(api=CQApiConfig.message.get_msg.Api)
+        if not info: return
+        message_data = info.get("message")
+        cq, file, url = re.match("\[CQ:(.*),file=(.*),url=(.*)]", message_data).groups()
+        if cq != "image": return
+        image_data, fmt = self.download_image(url)
+        img_b64 = self.image_zoom(image_data, number, im_type, fmt=fmt)
+        if not img_b64:
+            await bot.send(event, MessageSegment.reply(event.message_id).__add__(
+                MessageSegment.text("图片不合法")
+            ))
+
+        message = MessageSegment.reply(event.message_id).__add__(
+            MessageSegment.image(file=f"base64://{img_b64}", type=fmt)
+        )
+        await bot.send(event, message)
+
+    def download_image(self, url):
+        try:
+            response = requests.get(url)
+            fmt = response.headers.get("Content-Type", 'image/jpeg')
+            fmt = fmt.split("/")[1]
+            with Image.open(BytesIO(response.content)) as _img:
+                image_data = self.image_to_base64(_img, fmt=fmt)
+            return image_data, fmt
+        except:
+            return None
+
+    @staticmethod
+    def image_to_base64(img, fmt='png'):
+        output_buffer = BytesIO()
+        img.save(output_buffer, format=fmt)
+        byte_data = output_buffer.getvalue()
+        base64_str = base64.b64encode(byte_data).decode('utf-8')
+        return base64_str
+
+    def image_zoom(self, imgdata, scale=1, scale_type=None, fmt='png'):
+        buffer = io.BytesIO()
+        imgdata = base64.b64decode(imgdata)
+        img = Image.open(io.BytesIO(imgdata))
+        if scale_type == "缩小":
+            new_img = img.resize((img.size[0]//int(scale), img.size[1]//int(scale)))
+        elif scale_type == "放大":
+            new_img = img.resize((img.size[0] * int(scale), img.size[1] * int(scale)))
+        else:
+            return
+        new_img.save(buffer, format=fmt)
+        img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return img_b64
+
+
+
+

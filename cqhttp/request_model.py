@@ -54,3 +54,7 @@ class SendGroupNodeMsgRequest(SendRequest):
 
 class DeleteMsgRequest(SendRequest):
     message_id: int
+
+
+class GetMessage(SendRequest):
+    message_id: int
