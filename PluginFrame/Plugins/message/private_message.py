@@ -10,6 +10,8 @@ from universal import handle_message
 @registration_directive(matching=r'^(?![-.#\[\r\n])([\s\S]*)', message_types=("private",))
 class PrivateMessagePlugin(BaseComponentPlugin):
     __name__ = 'privateMessage'
+    desc = "私聊GPT回答机器人"
+    docs = "提问非 -.# 开头的问题 [GPT绘画指令：画【描述语】]"
 
     async def start(self, message_parameter):
         event = message_parameter.get("event")

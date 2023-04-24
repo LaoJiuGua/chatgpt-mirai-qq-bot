@@ -79,7 +79,7 @@ class PluginManager(type):
 
     # 根据插件名字，获取插件对象。（提供插件之间的通信）
     @staticmethod
-    def get_plugin_by_name(plugin_name):
+    async def get_plugin_by_name(plugin_name):
         if plugin_name is None:
             return None
         else:
@@ -92,6 +92,8 @@ class PluginManager(type):
 # 插件框架的接入点。便于管理各个插件。各个插件通过继承接入点类，利用Python中metaclass的优势，将插件注册。接入点中定义了各个插件模块必须要实现的接口。
 class ModelComponent(metaclass=PluginManager):
     __name__ = 'ModelComponent'
+    desc = ''
+    permissions = ()
 
     @abc.abstractmethod
     def start(self, message_parameter):

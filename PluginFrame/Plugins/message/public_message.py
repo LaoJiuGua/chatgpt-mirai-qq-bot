@@ -11,9 +11,12 @@ from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
 
 
-@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"), permissions=("all",))
+@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"))
 class DouYinBellePlugin(BaseComponentPlugin):
     __name__ = 'DouYinBellePlugin'
+    desc = "抖音MM短视频"
+    docs = '#美女 / #放松心情 / #轻松一刻'
+    permissions = ("all",)
 
     async def start(self, message_parameter):
 
@@ -40,9 +43,12 @@ class DouYinBellePlugin(BaseComponentPlugin):
         return url
 
 
-@registration_directive(matching=r'^#(ping|Ping) (.*)', message_types=("private", "group"), permissions=("admin",))
+@registration_directive(matching=r'^#(ping|Ping) (.*)', message_types=("private", "group"))
 class PingHostPlugin(BaseComponentPlugin):
     __name__ = 'PingHostPlugin'
+    desc = "Ping域名"
+    docs = '#Ping / #ping [baidu.com]'
+    permissions = ("admin",)
 
     async def start(self, message_parameter):
         message_info = message_parameter.get("event")
@@ -98,9 +104,12 @@ class PingHostPlugin(BaseComponentPlugin):
         return status, data
 
 
-@registration_directive(matching=r'^#舔狗', message_types=("private", "group"), permissions=("all",))
+@registration_directive(matching=r'^#舔狗', message_types=("private", "group"))
 class AnimeWallpapersPlugin(BaseComponentPlugin):
     __name__ = 'AnimeWallpapersPlugin'
+    desc = "舔狗日记"
+    docs = '#舔狗'
+    permissions = ("all",)
 
     async def start(self, message_parameter):
 
@@ -149,9 +158,12 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
         return text[0]
 
 
-@registration_directive(matching=r'^#今日热点', message_types=("private", "group"), permissions=("all",))
+@registration_directive(matching=r'^#今日热点', message_types=("private", "group"))
 class TodayHotSpotPlugin(BaseComponentPlugin):
     __name__ = 'TodayHotSpotPlugin'
+    desc = "今日热点"
+    docs = '#今日热点'
+    permissions = ("all",)
 
     async def start(self, message_parameter):
         message_info = message_parameter.get("event")
@@ -201,9 +213,12 @@ class TodayHotSpotPlugin(BaseComponentPlugin):
 
 
 @registration_directive(matching=r'^\[CQ:reply,id=(-\d+|\d+)\](\[CQ:at,qq=(\d+)\]|)(| )(放大|缩小)(\d{1})倍',
-                        message_types=("private", "group"), permissions=("all",))
+                        message_types=("private", "group"))
 class ImageVariationPlugin(BaseComponentPlugin):
     __name__ = 'ImageVariationPlugin'
+    desc = "图片放大/缩小"
+    docs = '引用图片消息 [放大/缩小][1-9]倍 【群内去掉At】'
+    permissions = ("all",)
 
     async def start(self, message_parameter):
         event = message_parameter.get("event")

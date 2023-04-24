@@ -1,31 +1,22 @@
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugins_conf import registration_directive
 from loguru import logger
-
-from config import Config
 from constants import config
-from cqhttp.api import CQApiConfig
-
-from cqhttp.request_model import SendGroupMsgRequest, SendPrivateMsgRequest
 from platforms.onebot_bot import transform_message_chain
 from universal import handle_message
-from utils.text_to_img import to_image
 
 
 @registration_directive(matching=r'\[CQ:at,qq=(\w+)] ([\s\S]*)', message_types=("group",))
 class GroupMessagePlugin(BaseComponentPlugin):
     __name__ = 'groupMessage'
+    desc = "群聊GPT回答机器人"
+    docs = "@机器人QQ [提问的问题]【无绘画接口】"
 
     async def start(self, message_parameter):
         re_obj = message_parameter.get("re_obj")
         event = message_parameter.get("event")
-        sender = event.sender
         if re_obj.group(1) != str(event.self_id):
             return
-
-        logger.info(
-            f"收到群组({event.group_id})消息：{sender.get('nickname')}({sender.get('user_id')})---->{event.message}"
-        )
         # 调用GPT-3聊天机器人
         chain = transform_message_chain(event.message)
         await handle_message(

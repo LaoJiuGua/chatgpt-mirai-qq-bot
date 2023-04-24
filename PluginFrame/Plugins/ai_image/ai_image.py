@@ -19,6 +19,8 @@ token = None
 @registration_directive(matching=r'^#画(.*?)', message_types=("private", 'group'))
 class AiImagePlugin(BaseComponentPlugin):
     __name__ = 'AiImagePlugin'
+    desc = "Ai绘画"
+    docs = "#画[描述语]"
 
     async def start(self, message_parameter):
         # 调用GPT-3聊天机器人
