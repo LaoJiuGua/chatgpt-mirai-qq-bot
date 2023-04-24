@@ -32,8 +32,11 @@ class MessageDispose:
 
         if plugin := await PluginManager.get_plugin_by_name(ma_obj.plugin_name):
             # 权限认证
-            await self.__permission_authentication(plugin, bot, event)
-            # 传递参数
+            is_per = await self.__permission_authentication(plugin, event)
+            if not is_per:
+                await bot.send(event, "您没有权限执行这个操作")
+                return
+                # 传递参数
             self.plugin_parameter["event"] = event
             self.plugin_parameter["bot"] = bot
             self.plugin_parameter["re_obj"] = re_obj
@@ -52,7 +55,10 @@ class MessageDispose:
 
         if plugin := await PluginManager.get_plugin_by_name(ma_obj.plugin_name):
             # 权限认证
-            await self.__permission_authentication(plugin, bot, event)
+            is_per = await self.__permission_authentication(plugin, event)
+            if not is_per:
+                await bot.send(event, "您没有权限执行这个操作")
+                return
             # 传递参数
             self.plugin_parameter["event"] = event
             self.plugin_parameter["re_obj"] = re_obj
@@ -64,21 +70,22 @@ class MessageDispose:
         return
 
     @staticmethod
-    async def __permission_authentication(plugin, bot, event):
+    async def __permission_authentication(plugin, event):
         if hasattr(plugin, "permissions"):
             if not plugin.permissions:
-                return
+                return True
 
             if "all" in plugin.permissions:
-                return
+                return True
             elif 'admin' in plugin.permissions:
                 if event.user_id != config.onebot.manager_qq:
-                    return await bot.send(event, "您没有权限执行这个操作")
+                    return False
             else:
                 if event.user_id in plugin.permissions:
-                    return
+                    return True
                 else:
-                    return await bot.send(event, "您没有权限执行这个操作")
+                    return False
+        return True
 
 def transform_message_chain(text: str) -> MessageChain:
     pattern = r"\[CQ:(\w+),([^\]]+)\]"
