@@ -163,7 +163,7 @@ class TodayHotSpotPlugin(BaseComponentPlugin):
     __name__ = 'TodayHotSpotPlugin'
     desc = "今日热点"
     docs = '#今日热点'
-    permissions = ("all",)
+    permissions = ("admin",)
 
     async def start(self, message_parameter):
         message_info = message_parameter.get("event")

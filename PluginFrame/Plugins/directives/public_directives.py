@@ -1,7 +1,7 @@
 from aiocqhttp import MessageSegment
 
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import plugin_desc
+from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq
 from PluginFrame.plugins_conf import registration_directive
 from constants import config
 from middlewares.ratelimit import manager as ratelimit_manager
@@ -55,9 +55,13 @@ class MenuPlugin(BaseComponentPlugin):
                     menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
                 if "admin" in permissions:
-                    if event.user_id == config.onebot.manager_qq:
-                        menu_info += f"- {key} -- {value.get('docs')} **管理员专享**\n- - -\n"
+                    if event.user_id in manager_qq:
+                        menu_info += f"- {key} -- {value.get('docs')} **管理员权限**\n- - -\n"
                         continue
+                if 'code' in permissions:
+                    if event.user_id == code_qq:
+                        menu_info += f"- {key} -- {value.get('docs')} **开发者权限**\n- - -\n"
+                    continue
                 if event.user_id in permissions:
                     menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
@@ -66,14 +70,36 @@ class MenuPlugin(BaseComponentPlugin):
         await bot.send(event, resp)
 
 
+# 添加管理员
+@registration_directive(matching=r'#添加管理员(\d+|\[CQ:at,qq=(\d+)\])', message_types=("private", "group"))
+class AddManagerPlugin(BaseComponentPlugin):
+    __name__ = 'AddManagerPlugin'
 
+    desc = "添加机器人管理员"
+    docs = "#添加管理员[@群员 | QQ号]"
+    permissions = ("code",)
 
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        # 获取正则对象
+        re_obj = message_parameter.get("re_obj")
+        # 获取机器人对象
+        bot = message_parameter.get("bot")
+        friends_qq, at_qq = re_obj.groups()
 
+        if at_qq:
+            if int(at_qq) not in manager_qq:
+                manager_qq.append(int(at_qq))
+            else:
+                await bot.send(event, "已经是管理员！")
+                return
+        else:
+            if int(friends_qq) not in manager_qq:
+                manager_qq.append(int(friends_qq))
+            else:
+                await bot.send(event, "已经是管理员！")
+                return
 
-
-## 添加权限
-
-
-
-## 关闭插件
+        await bot.send(event, "添加成功！")
+        return True
 

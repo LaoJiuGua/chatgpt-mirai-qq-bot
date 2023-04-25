@@ -7,6 +7,7 @@ from graia.amnesia.message import MessageChain
 from graia.ariadne.message.element import Plain, Image, At
 from loguru import logger
 from PluginFrame.PluginManager import PluginManager
+from PluginFrame.plugin_constant import manager_qq, code_qq
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config
 
@@ -74,11 +75,13 @@ class MessageDispose:
         if hasattr(plugin, "permissions"):
             if not plugin.permissions:
                 return True
-
             if "all" in plugin.permissions:
                 return True
+            elif 'code' in plugin.permissions:
+                if event.user_id != code_qq:
+                    return False
             elif 'admin' in plugin.permissions:
-                if event.user_id != config.onebot.manager_qq:
+                if event.user_id not in manager_qq:
                     return False
             else:
                 if event.user_id in plugin.permissions:
