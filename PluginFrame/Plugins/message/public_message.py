@@ -483,7 +483,7 @@ class WeightPlugin(BaseComponentPlugin):
     __name__ = 'WeightPlugin'
     desc = "查询QQ权重"
     docs = '#权重[QQ号 | @群友]'
-    permissions = ("all",)
+    permissions = ("admin",)
 
     async def start(self, message_parameter):
         event = message_parameter.get("event")
