@@ -7,7 +7,7 @@ from graia.amnesia.message import MessageChain
 from graia.ariadne.message.element import Plain, Image, At
 from loguru import logger
 from PluginFrame.PluginManager import PluginManager
-from PluginFrame.plugin_constant import manager_qq, code_qq
+from PluginFrame.plugin_constant import manager_qq, code_qq, init_manager_qq
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config
 
@@ -125,6 +125,7 @@ async def start_task():
     以异步方式启动
     """
     PluginManager.load_all_plugin()
+    init_manager_qq()
     return await bot.run_task(host=config.onebot.reverse_ws_host, port=config.onebot.reverse_ws_port)
 
 

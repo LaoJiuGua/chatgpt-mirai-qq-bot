@@ -1,7 +1,7 @@
 from aiocqhttp import MessageSegment
 
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq
+from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq
 from PluginFrame.plugins_conf import registration_directive
 from constants import config
 from middlewares.ratelimit import manager as ratelimit_manager
@@ -55,7 +55,7 @@ class MenuPlugin(BaseComponentPlugin):
                     menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
                 if "admin" in permissions:
-                    if event.user_id in manager_qq:
+                    if event.user_id in get_manager_qq():
                         menu_info += f"- {key} -- {value.get('docs')} **管理员权限**\n- - -\n"
                         continue
                 if 'code' in permissions:
@@ -88,14 +88,14 @@ class AddManagerPlugin(BaseComponentPlugin):
         friends_qq, at_qq = re_obj.groups()
 
         if at_qq:
-            if int(at_qq) not in manager_qq:
-                manager_qq.append(int(at_qq))
+            if int(at_qq) not in get_manager_qq():
+                add_manager_qq(int(at_qq))
             else:
                 await bot.send(event, "已经是管理员！")
                 return
         else:
-            if int(friends_qq) not in manager_qq:
-                manager_qq.append(int(friends_qq))
+            if int(friends_qq) not in get_manager_qq():
+                add_manager_qq(int(friends_qq))
             else:
                 await bot.send(event, "已经是管理员！")
                 return
