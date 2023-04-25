@@ -274,5 +274,31 @@ class ImageVariationPlugin(BaseComponentPlugin):
         return img_b64
 
 
+@registration_directive(matching=r'#随机歌曲', message_types=("private", "group"))
+class MusicPlugin(BaseComponentPlugin):
+    __name__ = 'MusicPlugin'
+    desc = "随机网易云音乐"
+    docs = '#随机歌曲'
+    permissions = ("admin",)
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        # _, music_name = message_parameter.get("re_obj").groups()
+        r_id = self.get_music()
+        if not r_id:
+            return
+        message = MessageSegment.music(type_='163', id_=r_id)
+        await bot.send(event, message)
+
+    def get_music(self):
+
+        try:
+            res = requests.get("https://api.wqwlkj.cn/wqwlapi/wyy_random.php?type=json", timeout=10)
+            r_id = res.json().get("data").get("id")
+            return r_id
+        except:
+            return False
+
 
 
