@@ -6,7 +6,7 @@ import requests
 from loguru import logger
 from PIL import Image
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import choose_data, set_choose_data, get_choose_data, del_choose_data
+from PluginFrame.plugin_constant import choose_data, set_choose_data, get_choose_data, del_choose_data, get_manager_qq
 from PluginFrame.plugins_conf import registration_directive
 from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
@@ -476,3 +476,39 @@ class ChoosePlugin(BaseComponentPlugin):
         await bot.send(event, message)
         del_choose_data(event.user_id)
         return message
+
+
+@registration_directive(matching=r'#权重(\d+|\[CQ:at,qq=(\d+)\])', message_types=("private", "group"))
+class WeightPlugin(BaseComponentPlugin):
+    __name__ = 'WeightPlugin'
+    desc = "查询QQ权重"
+    docs = '#权重[QQ号 | @群友]'
+    permissions = ("all",)
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        re_obj = message_parameter.get("re_obj")
+        friends_qq, at_qq = re_obj.groups()
+        wait_info = await bot.send(event, MessageSegment.reply(event.get("message_id")).__add__(
+            MessageSegment.text('请稍后...')
+        ))
+
+        if at_qq:
+            message = self.get_weight(qq=at_qq)
+        else:
+            message = self.get_weight(qq=friends_qq)
+
+        await self.del_wait(wait_info.get("message_id"))
+
+        await bot.send(event, message)
+
+        return
+
+    def get_weight(self, qq):
+        try:
+            res = requests.get(f"http://tfapi.top/API/qqqz.php?type=json&qq={qq}")
+            qz = res.json().get("qz")
+            return F"Qq:{qq}, 权重：{qz}"
+        except:
+            return "接口似乎出现了问题！！"
