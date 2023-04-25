@@ -6,6 +6,7 @@ import requests
 from loguru import logger
 from PIL import Image
 from PluginFrame.Plugins import BaseComponentPlugin
+from PluginFrame.plugin_constant import choose_data, set_choose_data, get_choose_data, del_choose_data
 from PluginFrame.plugins_conf import registration_directive
 from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
@@ -274,31 +275,107 @@ class ImageVariationPlugin(BaseComponentPlugin):
         return img_b64
 
 
-@registration_directive(matching=r'#随机歌曲', message_types=("private", "group"))
+@registration_directive(matching=r'#点歌(| )(.*)', message_types=("private", "group"))
 class MusicPlugin(BaseComponentPlugin):
     __name__ = 'MusicPlugin'
-    desc = "随机网易云音乐"
-    docs = '#随机歌曲'
+    desc = "点歌系统（网易云）"
+    docs = '#点歌 [歌曲名称]'
     permissions = ("admin",)
 
     async def start(self, message_parameter):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
-        # _, music_name = message_parameter.get("re_obj").groups()
-        r_id = self.get_music()
-        if not r_id:
+        _, music_name = message_parameter.get("re_obj").groups()
+
+        wait_info = await bot.send(event, MessageSegment.reply(event.get("message_id")).__add__(
+            MessageSegment.text('请稍后...')
+        ))
+        print(wait_info)
+        r_id_info, r_ids = self.get_music(music_name)
+
+        await self.del_wait(wait_info.get("message_id"))
+
+        if not r_id_info:
+            await bot.send(event, "接口似乎出现了问题！！")
             return
-        message = MessageSegment.music(type_='163', id_=r_id)
-        await bot.send(event, message)
 
-    def get_music(self):
+        r_id_info.insert(0, MessageSegment.node_custom(
+            nickname="北.", user_id=1113855149,
+            content=MessageSegment.text("请输入-【序号】选择歌曲！")
+        ))
 
+        if event.get("message_type") == "group":
+
+            message_info=await self.send(self.send_group_node_msg, group_id=event.get("group_id"))(
+                    messages=r_id_info
+                )
+            set_choose_data(
+                event.user_id, event.message_type, 'mus', {"r_ids": r_ids, "message_id": message_info.get("message_id")}
+            )
+
+        elif event.get("message_type") == "private":
+
+            message_info = await self.send(self.send_private_node_msg, user_id=event.get("user_id"))(
+                messages=r_id_info
+            )
+            set_choose_data(
+                event.user_id, event.message_type, 'mus', {"r_ids": r_ids, "message_id": message_info.get("message_id")}
+            )
+
+    def get_music(self, name):
+        _list = []
+        r_ids = []
         try:
-            res = requests.get("https://api.wqwlkj.cn/wqwlapi/wyy_random.php?type=json", timeout=10)
-            r_id = res.json().get("data").get("id")
-            return r_id
+            res = requests.get(
+                f"https://api.pearktrue.cn/api/music/search.php?name={name}&type=netease&page=1", timeout=10
+            )
+            music_data = res.json().get("data", []) or []
+            for index, music in enumerate(music_data):
+                id = re.fullmatch("http://music.163.com/song/media/outer/url\?id=(.*).mp3", music.get('playurl'))
+                if not id:
+                    continue
+                r_id = id.group(1)
+                r_ids.append(r_id)
+                message = MessageSegment.node_custom(
+                    nickname="北.", user_id=1113855149,
+                    content=f"""{MessageSegment(type_="reply", data={"text": "序号："+str(index), "qq": 1113855149})}歌名：《{music.get('title')}》\n演唱：{music.get('author')}"""
+                )
+                _list.append(message)
+            return _list, r_ids
         except:
             return False
 
 
+@registration_directive(matching=r'-(| )(\d+)', message_types=("private", "group"))
+class ChoosePlugin(BaseComponentPlugin):
+    __name__ = 'ChoosePlugin'
+    desc = ""
+    docs = ''
+    permissions = ("all",)
 
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        _, choose_id = message_parameter.get("re_obj").groups()
+        _data = get_choose_data(event.user_id, event.message_type)
+        if 'mus' in _data:
+            await self.mus_send(event, choose_id, _data, bot)
+        return
+
+    async def mus_send(self, event, choose_id, _data, bot):
+        mus = _data.get("mus", {}) or {}
+        if not mus:
+            return
+        r_ids = mus.get('r_ids')
+        if not r_ids:
+            return
+        try:
+            id_ = r_ids[int(choose_id)]
+        except:
+            await bot.send(event, "歌曲序号不正确！重新选择")
+            return False
+        message = MessageSegment.music(type_='163', id_=id_)
+        await self.del_wait(mus.get("message_id", ''))
+        await bot.send(event, message)
+        del_choose_data(event.user_id)
+        return message
