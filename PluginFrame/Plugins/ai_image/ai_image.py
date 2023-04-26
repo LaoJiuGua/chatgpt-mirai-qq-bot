@@ -16,64 +16,49 @@ from cqhttp.request_model import SendRequest, MessageSegment
 token = None
 
 
-@registration_directive(matching=r'^#画(.*?)', message_types=("private", 'group'))
+@registration_directive(matching=r'^#画(|.*?) (.*?)', message_types=("private", 'group'))
 class AiImagePlugin(BaseComponentPlugin):
     __name__ = 'AiImagePlugin'
     desc = "Ai绘画"
-    docs = "#画[描述语]"
+    docs = "#画[绘画风格] [描述语]"
 
     async def start(self, message_parameter):
         # 调用GPT-3聊天机器人
         re_obj = message_parameter.get("re_obj")
         event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
         sender = event.sender
         message_id =event.message_id
         # 调用GPT-3聊天机器人
 
-        if event.get("message_type") == "group":
-            logger.info(
-                f"收到Ai绘画消息：{re_obj.group(1)}"
-            )
+        style, description = re_obj.groups()
+        styles = ["国画", "写实主义", "相机", "黑白插画", "版绘", "电影艺术", "史诗大片", "暗黑", "涂鸦",
+                  "漫画场景", "特写", "油画", "水彩画", "素描", "卡通画", "动漫", "Momoko", "通用漫画"]
+        if style.strip() not in styles:
+            style = 'Momoko'
 
-            wait_info = await self.send_wait(self.send_group_msg, group_id=event.get("group_id"))(
-                event.get("message_id"), "请稍后..."
-            )
-            avatar_str = self.ai_painting(re_obj.group(1))
-            await self.del_wait(wait_info.get("message_id"))
+        logger.info(
+            f"收到Ai{style}风格绘画消息：{description}"
+        )
 
-            if avatar_str == -6:
-                await self.send_group_msg(event.get("group_id"), "绘画失败，包含非法字符！")
-                return
+        wait_info = await bot.send(event, MessageSegment.reply(event.get("message_id")).__add__(
+            MessageSegment.text(f'绘画风格：{style}, 请稍后...')
+        ))
+        status, avatar_str = self.ai_painting(style, description)
+        await self.del_wait(wait_info.get("message_id"))
 
-            avatar_str = base64.b64decode(avatar_str)
-            image_cq = MessageSegment.reply(id_=message_id).__add__(
-                MessageSegment.image(
-                    file="base64://" + base64.b64encode(avatar_str).decode()
-                )
-            )
-            await self.send_group_msg(event.get("group_id"), str(image_cq))
+        if not status:
+            await bot.send(event, avatar_str)
+            return
 
-        elif event.get("message_type") == "private":
-            logger.info(
-                f"收到Ai绘画消息：{re_obj.group(1)}"
-            )
-            wait_info = await self.send_wait(self.send_private_msg, user_id=event.user_id)(
-                event.get("message_id"), "请稍后..."
-            )
-            avatar_str = self.ai_painting(re_obj.group(1))
-            await self.del_wait(wait_info.get("message_id"))
+        avatar_str = base64.b64decode(avatar_str)
 
-            if avatar_str == -6:
-                await self.send_private_msg(event.get("user_id"), "绘画失败，包含非法字符！")
-                return
-
-            avatar_str = base64.b64decode(avatar_str)
-            image_cq = MessageSegment.reply(id_=message_id).__add__(
-                MessageSegment.image(
-                    file="base64://" + base64.b64encode(avatar_str).decode()
-                )
+        image_cq = MessageSegment.reply(id_=message_id).__add__(
+            MessageSegment.image(
+                file="base64://" + base64.b64encode(avatar_str).decode()
             )
-            await self.send_private_msg(sender.get("user_id"), str(image_cq))
+        )
+        await bot.send(event, image_cq)
 
     def get_token(self):
         global token
@@ -90,25 +75,20 @@ class AiImagePlugin(BaseComponentPlugin):
         logger.info("使用已有Token---{}".format(token))
         return token
 
-    def ai_painting(self, prompt):
+    def ai_painting(self, style, description):
 
         token_key = self.get_token()
         url = "https://flagopen.baai.ac.cn/flagStudio/v1/text2img"
-
-        style = ["国画", "写实主义", "虚幻引擎", "黑白插画", "版绘", "电影艺术", "史诗大片", "暗黑", "涂鸦",
-                 "漫画场景", "特写", "油画", "水彩画", "素描", "卡通画", "浮世绘", "赛博朋克", "吉卜力", "哑光",
-                 "现代中式", "相机", "CG渲染", "动漫", "霓虹游戏", "通用漫画", "Momoko", "MJ风格", "剪纸", "齐白石", "丰子恺"]
-
         payload = {
-            "prompt": f"{prompt}",
-            "guidance_scale": 10.0,
+            "prompt": f"{description.strip()}",
+            "guidance_scale": 20,
             "height": 768,
             "negative_prompts": "",
             "sampler": "ddim",
-            "seed": 1024,
+            # "seed": 0xfffffffffffffff,
             "steps": 50,
-            "style": random.choice(style),
-            "upsample": 2,
+            "style": style.strip(),
+            "upsample": 1,
             "width": 512
         }
         headers = {
@@ -120,10 +100,8 @@ class AiImagePlugin(BaseComponentPlugin):
         response = requests.request("POST", url, json=payload, headers=headers)
         logger.info("开始进行绘画......")
         if response.json()['code'] == 200:
-
             logger.info("AI绘画完成......")
-            return response.json().get('data')
-        if response.json()['code'] == -6:
-            logger.info("包含非法字符")
-            return -6
+            return True, response.json().get('data')
+        if response.json()['code'] != 200:
+            return False, response.json()['data']
         return ''
