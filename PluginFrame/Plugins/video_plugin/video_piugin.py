@@ -44,11 +44,11 @@ class DouYinBellePlugin(BaseComponentPlugin):
         return url
 
 
-@registration_directive(matching=r'^#视频搜索(\d+|) (.*)', message_types=("private", "group"))
+@registration_directive(matching=r'^#视频搜索(\d+|) (.*)-(\d+)', message_types=("private", "group"))
 class VideoPlugin(BaseComponentPlugin):
     __name__ = 'VideoPlugin'
     desc = "视频搜索(支持动漫、电影)"
-    docs = '#视频搜索[解析渠道1~∞][视频名称]'
+    docs = '#视频搜索[解析渠道1~∞][视频名称]-[页数]'
     permissions = ("admin",)
 
     async def start(self, message_parameter):
@@ -56,19 +56,21 @@ class VideoPlugin(BaseComponentPlugin):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
         re_obj = message_parameter.get("re_obj")
-        num, msg = re_obj.groups()
-
+        num, msg, page = re_obj.groups()
         if not num.strip():
             num = 1
+        if not page.strip():
+            page = 1
         wait_info = await bot.send(event, MessageSegment.reply(event.get("message_id")).__add__(
             MessageSegment.text('请稍后...')
         ))
 
-        status, message_info = self.get_video_url(msg, num)
+        status, message_info = self.get_video_url(msg, num, page)
 
         await self.del_wait(wait_info.get("message_id"))
         if not status:
             await bot.send(event, message_info)
+            await self.del_wait(wait_info.get("message_id"))
             return
 
         if event.get("message_type") == "group":
@@ -81,12 +83,13 @@ class VideoPlugin(BaseComponentPlugin):
                 messages=message_info
             )
 
-
     @staticmethod
-    def get_video_url(msg, num):
-
-        if not int(num):
+    def get_video_url(msg, num, page):
+        count = 10
+        if int(num) <= 0:
             num = 1
+        if int(page) <= 0:
+            page = 1
 
         _list = []
         try:
@@ -97,16 +100,21 @@ class VideoPlugin(BaseComponentPlugin):
                 return False, video_data.get("msg")
 
             video_data_list = video_data.get("data", []) or []
-            if not video_data_list:
+            try:
+                video_data_list_new = video_data_list[(int(page)-1)*count: count*int(page)]
+            except Exception as e:
+                video_data_list_new = []
+
+            if not video_data_list_new:
                 return False, "暂无查询结果"
 
             message_title = MessageSegment.node_custom(
                 nickname="北.", user_id=1113855149,
-                content=f"""视频名称：{video_data.get('videoname')}\n类型：{video_data.get('videostate')}"""
+                content=f"""视频名称：{video_data.get('videoname')}\n类型：{video_data.get('videostate')}\n页数:{page}"""
             )
             _list.append(message_title)
 
-            for data in video_data_list:
+            for data in video_data_list_new:
                 link = data.get('link')
                 try:
                     resp_url = requests.get(f"https://api.pearktrue.cn/api/short/dwz.php?url={link}", timeout=5)
