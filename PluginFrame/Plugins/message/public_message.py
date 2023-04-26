@@ -12,38 +12,6 @@ from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
 
 
-@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"))
-class DouYinBellePlugin(BaseComponentPlugin):
-    __name__ = 'DouYinBellePlugin'
-    desc = "抖音MM短视频"
-    docs = '#美女 / #放松心情 / #轻松一刻'
-    permissions = ("all",)
-
-    async def start(self, message_parameter):
-
-        message_info = message_parameter.get("event")
-        sender = message_info.sender
-        message = MessageSegment.video(self.get_girl_url())
-        if message_info.get("message_type") == "group":
-            await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
-                CQApiConfig.message.send_group_msg.Api
-            )
-        elif message_info.get("message_type") == "private":
-            await SendPrivateMsgRequest(user_id=sender.get("user_id"), message=message).send_request(
-                CQApiConfig.message.send_private_msg.Api
-            )
-
-    @staticmethod
-    def get_girl_url():
-        resp = requests.get("http://xin-hao.top/sqlWork/randomDouyin")
-        try:
-            url = resp.history[1].url
-        except:
-            url = "http://xin-hao.top/sqlWork/randomDouyin"
-        logger.info("取到的url为：{}".format(url))
-        return url
-
-
 @registration_directive(matching=r'^#(ping|Ping) (.*)', message_types=("private", "group"))
 class PingHostPlugin(BaseComponentPlugin):
     __name__ = 'PingHostPlugin'
