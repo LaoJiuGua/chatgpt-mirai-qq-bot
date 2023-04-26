@@ -28,8 +28,9 @@ choose_data = {}
 
 
 def init_manager_qq():
-    with open(os.path.join(path, "data/manager_qq.json"), 'wb') as f:
-        pickle.dump(manager_qq, f)
+    if not os.path.isfile(os.path.join(path, "data/manager_qq.json")):
+        with open(os.path.join(path, "data/manager_qq.json"), 'wb') as f:
+            pickle.dump(manager_qq, f)
     return True
 
 
