@@ -21,6 +21,7 @@ class AiImagePlugin(BaseComponentPlugin):
     __name__ = 'AiImagePlugin'
     desc = "Ai绘画"
     docs = "#画[绘画风格] [描述语]"
+    permissions = ("admin",)
 
     async def start(self, message_parameter):
         # 调用GPT-3聊天机器人
