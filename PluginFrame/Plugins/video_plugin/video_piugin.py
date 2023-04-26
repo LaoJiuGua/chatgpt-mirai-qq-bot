@@ -107,9 +107,18 @@ class VideoPlugin(BaseComponentPlugin):
             _list.append(message_title)
 
             for data in video_data_list:
+                link = data.get('link')
+                try:
+                    resp_url = requests.get(f"https://api.pearktrue.cn/api/short/dwz.php?url={link}", timeout=5)
+                    resp_url_data = resp_url.json()
+                    if resp_url_data.get("code") in ("200", 200):
+                        link = resp_url_data.get("short_url")
+                except:
+                    ...
+
                 message = MessageSegment.node_custom(
                     nickname="北.", user_id=1113855149,
-                    content=f"""{MessageSegment(type_="reply", data={"text": f"{data.get('name')}", "qq": 1113855149})}{data.get('link')}"""
+                    content=f"""{MessageSegment(type_="reply", data={"text": f"{data.get('name')}", "qq": 1113855149})}{link}"""
                 )
                 _list.append(message)
 
