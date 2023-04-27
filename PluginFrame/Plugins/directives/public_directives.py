@@ -1,7 +1,8 @@
 from aiocqhttp import MessageSegment
 
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq
+from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq, \
+    get_black_list, set_black_list, del_black_list
 from PluginFrame.plugins_conf import registration_directive
 from constants import config
 from middlewares.ratelimit import manager as ratelimit_manager
@@ -105,3 +106,78 @@ class AddManagerPlugin(BaseComponentPlugin):
         await bot.send(event, "添加成功！")
         return True
 
+
+@registration_directive(matching=r'#禁用(\d+|\[CQ:at,qq=(\d+)\])', message_types=("private", "group"))
+class AddFriendBlacklistPlugin(BaseComponentPlugin):
+    __name__ = 'AddFriendBlacklistPlugin'
+
+    desc = "禁用某QQ使用机器人"
+    docs = "#禁用[@群员 | QQ号]"
+    permissions = ("admin", )
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        # 获取正则对象
+        re_obj = message_parameter.get("re_obj")
+        # 获取机器人对象
+        bot = message_parameter.get("bot")
+        friends_qq, at_qq = re_obj.groups()
+
+        if at_qq:
+            if int(at_qq) in get_manager_qq():
+                if event.user_id == code_qq:
+                    set_black_list("private", int(at_qq))
+                    return
+                else:
+                    await bot.send(event, "无权限将管理员加入黑名单！")
+                    return
+            set_black_list("private", int(at_qq))
+        else:
+            if int(friends_qq) in get_manager_qq():
+                if event.user_id == code_qq:
+                    set_black_list("private", int(friends_qq))
+                    return
+                else:
+                    await bot.send(event, "无权限将管理员加入黑名单！")
+                    return
+            set_black_list("private", int(friends_qq))
+
+        await bot.send(event, "添加成功！")
+        return True
+
+
+@registration_directive(matching=r'#解禁(\d+|\[CQ:at,qq=(\d+)\])', message_types=("private", "group"))
+class DelFriendBlacklistPlugin(BaseComponentPlugin):
+    __name__ = 'DelFriendBlacklistPlugin'
+
+    desc = "移除禁用某QQ使用机器人"
+    docs = "#解禁[@群员 | QQ号]"
+    permissions = ("admin", )
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        # 获取正则对象
+        re_obj = message_parameter.get("re_obj")
+        # 获取机器人对象
+        bot = message_parameter.get("bot")
+        friends_qq, at_qq = re_obj.groups()
+
+        if at_qq:
+            if int(at_qq) in get_manager_qq():
+                if event.user_id == code_qq:
+                    del_black_list("private", int(at_qq))
+                else:
+                    await bot.send(event, "无权限将管理员移除黑名单！")
+                    return
+            del_black_list("private", int(at_qq))
+        else:
+            if int(friends_qq) in get_manager_qq():
+                if event.user_id == code_qq:
+                    del_black_list("private", int(friends_qq))
+                else:
+                    await bot.send(event, "无权限将管理员移除黑名单！")
+                    return
+            del_black_list("private", int(friends_qq))
+
+        await bot.send(event, "移除成功！")
+        return True

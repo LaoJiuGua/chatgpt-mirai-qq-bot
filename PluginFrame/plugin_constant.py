@@ -13,6 +13,11 @@ directives_keys = {
     "group": []
 }
 
+black_list = {
+    "private": [],
+    "group": []
+}
+
 # 插件描述
 plugin_desc = {}
 
@@ -86,4 +91,34 @@ def del_choose_data(user_id):
 
     return True
 
+
+def set_black_list(black_type, black):
+    black_list[black_type].append(black)
+
+    with open(os.path.join(path, "data/black_list.json"), 'w') as f:
+        json.dump(black_list, f)
+    return True
+
+
+def get_black_list(black_type):
+    global black_list
+
+    if os.path.isfile(os.path.join(path, "data/black_list.json")):
+        with open(os.path.join(path, "data/black_list.json"), 'r') as f:
+            black_list = json.load(f)
+    return black_list[black_type]
+
+
+def del_black_list(black_type, black):
+    global black_list
+    black_list_new = get_black_list(black_type)
+    if black in black_list_new:
+        black_list_new.pop(black_list_new.index(black))
+
+    black_list[black_type] = black_list_new
+
+    with open(os.path.join(path, "data/black_list.json"), 'w') as f:
+        json.dump(black_list, f)
+
+    return True
 

@@ -7,7 +7,7 @@ from graia.amnesia.message import MessageChain
 from graia.ariadne.message.element import Plain, Image, At
 from loguru import logger
 from PluginFrame.PluginManager import PluginManager
-from PluginFrame.plugin_constant import manager_qq, code_qq, init_manager_qq, get_manager_qq
+from PluginFrame.plugin_constant import manager_qq, code_qq, init_manager_qq, get_manager_qq, get_black_list
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config
 
@@ -21,8 +21,14 @@ class MessageDispose:
     async def dispose(self, event: aiocqhttp.Event):
         if event.type in ('message', "message_sent"):
             if event.detail_type == "private" and event.type == "message":
+                if event.user_id in get_black_list("private"):
+                    return
                 await self.__private_message_dispose(event)
             if event.detail_type == "group" and event.type == "message":
+                if event.group_id in get_black_list("group") or event.user_id in get_black_list("private"):
+                    if event.user_id in get_manager_qq() and "#解禁此群" == event.message:
+                        return await self.__group_message_dispose(event)
+                    return
                 await self.__group_message_dispose(event)
 
     async def __private_message_dispose(self, event):

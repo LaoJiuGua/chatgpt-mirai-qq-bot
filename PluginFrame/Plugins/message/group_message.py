@@ -1,4 +1,5 @@
 from PluginFrame.Plugins import BaseComponentPlugin
+from PluginFrame.plugin_constant import get_black_list, del_black_list, set_black_list
 from PluginFrame.plugins_conf import registration_directive
 from loguru import logger
 from constants import config
@@ -27,6 +28,48 @@ class GroupMessagePlugin(BaseComponentPlugin):
             is_manager=event.user_id == config.onebot.manager_qq,
             nickname=event.sender.get("nickname", "群友")
         )
+
+
+@registration_directive(matching=r'#禁用此群', message_types=("group",))
+class AddGroupBlacklistPlugin(BaseComponentPlugin):
+    __name__ = 'AddGroupBlacklistPlugin'
+
+    desc = "将某群加入黑名单"
+    docs = "#禁用此群"
+    permissions = ("code",)
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        # 获取机器人对象
+        bot = message_parameter.get("bot")
+
+        if event.group_id in get_black_list("group"):
+            return
+
+        set_black_list("group", event.group_id)
+
+        await bot.send(event, "添加成功！")
+        return True
+
+
+@registration_directive(matching=r'#解禁此群', message_types=("group",))
+class DelGroupBlacklistPlugin(BaseComponentPlugin):
+    __name__ = 'DelGroupBlacklistPlugin'
+
+    desc = "将某群移除黑名单"
+    docs = "#解禁此群"
+    permissions = ("code",)
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        # 获取机器人对象
+        bot = message_parameter.get("bot")
+
+        if event.group_id in get_black_list("group"):
+            del_black_list("group", event.group_id)
+            await bot.send(event, "解禁成功！")
+        else:
+            return
 
 
 
