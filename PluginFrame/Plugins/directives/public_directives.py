@@ -44,7 +44,9 @@ class MenuPlugin(BaseComponentPlugin):
         event = message_parameter.get("event")
         # 获取机器人对象
         bot = message_parameter.get("bot")
-        menu_info = '- ### 功能菜单如下：\n'
+        menu_info = '### 普通用户权限功能菜单如下：\n'
+        code_menu_info = '\n### 开发者权限菜单如下：\n'
+        manager_menu_info = '\n### 管理员权限菜单如下：\n'
         for key, value in plugin_desc.items():
             if not value.get('docs'):
                 continue
@@ -56,16 +58,16 @@ class MenuPlugin(BaseComponentPlugin):
                     continue
                 if "admin" in permissions:
                     if event.user_id in get_manager_qq():
-                        menu_info += f"- {key} -- {value.get('docs')} **管理员权限**\n- - -\n"
+                        manager_menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                         continue
                 if 'code' in permissions:
                     if event.user_id == code_qq:
-                        menu_info += f"- {key} -- {value.get('docs')} **开发者权限**\n- - -\n"
+                        code_menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
                 if event.user_id in permissions:
                     menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
-        image_info = await to_image(menu_info)
+        image_info = await to_image(menu_info+manager_menu_info+code_menu_info)
         resp = MessageSegment.image(f"base64://{image_info.base64}")
         await bot.send(event, resp)
 
