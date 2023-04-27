@@ -124,6 +124,8 @@ class AddFriendBlacklistPlugin(BaseComponentPlugin):
         friends_qq, at_qq = re_obj.groups()
 
         if at_qq:
+            if int(at_qq) == code_qq:
+                await bot.send(event, "禁止将开发者添加黑名单！")
             if int(at_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     set_black_list("private", int(at_qq))
@@ -133,6 +135,8 @@ class AddFriendBlacklistPlugin(BaseComponentPlugin):
                     return
             set_black_list("private", int(at_qq))
         else:
+            if int(friends_qq) == code_qq:
+                await bot.send(event, "禁止将开发者添加黑名单！")
             if int(friends_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     set_black_list("private", int(friends_qq))
@@ -163,9 +167,6 @@ class DelFriendBlacklistPlugin(BaseComponentPlugin):
         friends_qq, at_qq = re_obj.groups()
 
         if at_qq:
-
-            if int(at_qq) == code_qq:
-                return
             if int(at_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     del_black_list("private", int(at_qq))
@@ -174,9 +175,6 @@ class DelFriendBlacklistPlugin(BaseComponentPlugin):
                     return
             del_black_list("private", int(at_qq))
         else:
-
-            if int(friends_qq) == code_qq:
-                return
             if int(friends_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     del_black_list("private", int(friends_qq))
