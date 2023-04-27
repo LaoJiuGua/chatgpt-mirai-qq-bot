@@ -126,6 +126,7 @@ class AddFriendBlacklistPlugin(BaseComponentPlugin):
         if at_qq:
             if int(at_qq) == code_qq:
                 await bot.send(event, "禁止将开发者添加黑名单！")
+                return
             if int(at_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     set_black_list("private", int(at_qq))
@@ -137,6 +138,7 @@ class AddFriendBlacklistPlugin(BaseComponentPlugin):
         else:
             if int(friends_qq) == code_qq:
                 await bot.send(event, "禁止将开发者添加黑名单！")
+                return
             if int(friends_qq) in get_manager_qq():
                 if event.user_id == code_qq:
                     set_black_list("private", int(friends_qq))
