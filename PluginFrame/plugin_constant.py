@@ -27,7 +27,7 @@ plugin_desc_key = {}
 
 manager_qq = [config.onebot.manager_qq, ]
 
-code_qq = 1113855149
+code_qq = config.onebot.manager_qq
 
 choose_data = {}
 
