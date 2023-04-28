@@ -161,7 +161,7 @@ class TodayHotSpotPlugin(BaseComponentPlugin):
 
     def get_girl_url(self):
         try:
-            resp = requests.get("https://v.api.aa1.cn/api/topbaidu/")
+            resp = requests.get("https://v.api.aa1.cn/api/topbaidu/", timeout=10)
             _dict_list = []
             for _ in resp.json().get("newslist"):
                 if not _.get('digest'):
