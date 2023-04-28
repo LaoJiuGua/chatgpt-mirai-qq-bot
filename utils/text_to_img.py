@@ -303,12 +303,14 @@ async def get_qr_data(text):
         return "data:image/jpeg;base64," + img_str.decode('utf-8')
 
 
-async def text_to_image(text):
+async def text_to_image(text, qr_code=None):
     ok = False
     try:
         content = md_to_html(text)
 
         image = None
+        if not qr_code:
+            qr_code = await get_qr_data(text)
 
         asset_folder = os.path.join(os.getcwd(), 'assets', 'texttoimg')
 
@@ -318,7 +320,7 @@ async def text_to_image(text):
         with StringIO() as output_file:
             # 填充正文
             html = template_html.replace('{path_texttoimg}', pathlib.Path(asset_folder).as_uri()) \
-                .replace("{qrcode}", await get_qr_data(text)) \
+                .replace("{qrcode}", qr_code) \
                 .replace("{content}", content) \
                 .replace("{font_size_texttoimg}", str(config.text_to_image.font_size)) \
                 .replace("{font_path_texttoimg}", pathlib.Path(font_path).as_uri())
@@ -357,8 +359,8 @@ async def text_to_image(text):
 
     return image
 
-async def to_image(text) -> GraiaImage:
-    img = await text_to_image(text=str(text))
+async def to_image(text, qr_code=None) -> GraiaImage:
+    img = await text_to_image(text=str(text), qr_code=qr_code)
     b = BytesIO()
     img.save(b, format="png")
     return GraiaImage(text=text, data_bytes=b.getvalue())

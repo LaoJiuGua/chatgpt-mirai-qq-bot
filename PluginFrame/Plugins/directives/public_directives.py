@@ -68,7 +68,10 @@ class MenuPlugin(BaseComponentPlugin):
                 if event.user_id in permissions:
                     menu_info += f"- {key} -- {value.get('docs')}\n- - -\n"
                     continue
-        image_info = await to_image(menu_info+manager_menu_info+code_menu_info)
+        image_info = await to_image(
+            menu_info+manager_menu_info+code_menu_info,
+            qr_code="https://file.52xiaobei.cn/bFxrC3Wet70up4PB4sFV1FCXHCsud4JA/logo.png"
+        )
         resp = MessageSegment.image(f"base64://{image_info.base64}")
         await bot.send(event, resp)
 
