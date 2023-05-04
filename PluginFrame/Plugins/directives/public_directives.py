@@ -1,10 +1,12 @@
 from aiocqhttp import MessageSegment
 
+import constants
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq, \
     get_black_list, set_black_list, del_black_list
 from PluginFrame.plugins_conf import registration_directive
-from constants import config
+from constants import config, botManager
+from manager.bot import BotManager
 from middlewares.ratelimit import manager as ratelimit_manager
 from utils.text_to_img import to_image
 
@@ -190,3 +192,23 @@ class DelFriendBlacklistPlugin(BaseComponentPlugin):
 
         await bot.send(event, "移除成功！")
         return True
+
+
+@registration_directive(matching=r'#重启', message_types=("private", "group"))
+class RebootPlugin(BaseComponentPlugin):
+    __name__ = 'RebootPlugin'
+    desc = ""
+    docs = ""
+    permissions = ("admin", )
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+
+        constants.config = config.load_config()
+        config.scan_presets()
+        await bot.send(event, "配置文件重新载入完毕！")
+        await bot.send(event, "重新登录账号中，详情请看控制台日志……")
+        constants.botManager = BotManager(config)
+        await botManager.login()
+        await bot.send(event, "登录结束")
