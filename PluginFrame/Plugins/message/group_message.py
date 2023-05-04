@@ -16,12 +16,13 @@ class GroupMessagePlugin(BaseComponentPlugin):
     async def start(self, message_parameter):
         re_obj = message_parameter.get("re_obj")
         event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
         if re_obj.group(1) != str(event.self_id):
             return
         # 调用GPT-3聊天机器人
         chain = transform_message_chain(event.message)
         await handle_message(
-            self.response(event, True),
+            self.response(event, True, bot),
             f"group-{event.group_id}",
             event.message,
             chain,

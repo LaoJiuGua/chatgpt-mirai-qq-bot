@@ -15,6 +15,7 @@ class PrivateMessagePlugin(BaseComponentPlugin):
 
     async def start(self, message_parameter):
         event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
         sender = event.sender
         logger.info(
             f"收到私人消息：{sender.get('nickname')}({sender.get('user_id')})---->{event.message}"
@@ -22,7 +23,7 @@ class PrivateMessagePlugin(BaseComponentPlugin):
         # 调用GPT-3聊天机器人
         chain = transform_message_chain(event.message)
         await handle_message(
-            self.response(event, False),
+            self.response(event, False, bot),
             f"friend-{event.user_id}",
             event.message,
             chain,

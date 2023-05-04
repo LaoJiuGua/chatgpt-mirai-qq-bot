@@ -66,7 +66,7 @@ class BaseComponentPlugin(ModelComponent):
         return True
 
     @staticmethod
-    def response(event, is_group: bool):
+    def response(event, is_group: bool, bot):
         async def respond(resp):
             logger.debug(f"[OneBot] 尝试发送消息：{str(resp)}")
             try:
@@ -80,16 +80,8 @@ class BaseComponentPlugin(ModelComponent):
 
                 if config.response.quote and '[CQ:record,file=' not in str(resp):  # skip voice
                     resp = MessageSegment.reply(event.message_id) + resp
-                if is_group:
-                    return await BaseComponentPlugin.send_group_msg(
-                        group_id=event.group_id,
-                        message=str(resp)
-                    )
-                else:
-                    return await BaseComponentPlugin.send_private_msg(
-                        user_id=event.user_id,
-                        message=str(resp)
-                    )
+                await bot.send(event, resp)
+
             except Exception as e:
                 logger.exception(e)
                 logger.warning("原始消息发送失败，尝试通过转发发送")
