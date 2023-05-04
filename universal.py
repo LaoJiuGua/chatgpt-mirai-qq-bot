@@ -5,9 +5,9 @@ from typing import Callable
 import openai
 from graia.ariadne.message.chain import MessageChain
 from graia.ariadne.message.element import Plain
-from httpx import HTTPStatusError, ConnectTimeout
 from loguru import logger
 from requests.exceptions import SSLError, ProxyError, RequestException
+from httpx import HTTPStatusError, ConnectTimeout
 from urllib3.exceptions import MaxRetryError
 
 from constants import botManager
@@ -190,12 +190,12 @@ async def handle_message(_respond: Callable, session_id: str, message: str,
 
             # 加载预设
             if preset_search := re.search(config.presets.command, prompt):
-                logger.trace(f"{session_id} - 正在执行预设： {preset_search[1]}")
+                logger.info(f"{session_id} - 正在执行预设： {preset_search[1]}")
                 async for _ in conversation_context.reset(): ...
                 task = conversation_context.load_preset(preset_search[1])
             elif not conversation_context.preset:
                 # 当前没有预设
-                logger.trace(f"{session_id} - 未检测到预设，正在执行默认预设……")
+                logger.info(f"{session_id} - 未检测到预设，正在执行默认预设……")
                 # 隐式加载不回复预设内容
                 async for _ in conversation_context.load_preset('default'): ...
 
@@ -210,7 +210,6 @@ async def handle_message(_respond: Callable, session_id: str, message: str,
                     action = lambda session_id, prompt, rendered, respond: respond(rendered)
                     for m in middlewares:
                         action = wrap_respond(action, m)
-
                     # 开始处理 handle_response
                     await action(session_id, prompt, rendered, respond)
             for m in middlewares:

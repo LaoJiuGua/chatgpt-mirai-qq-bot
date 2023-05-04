@@ -73,7 +73,7 @@ def transform_from_message_chain(chain: MessageChain):
     for elem in chain:
         if isinstance(elem, Image):
             result = result + MessageSegment.image(f"base64://{elem.base64}")
-        elif isinstance(elem, Plain):
+        elif isinstance(elem, (Plain, str)):
             result = result + MessageSegment.text(str(elem))
         elif isinstance(elem, Voice):
             result = result + MessageSegment.record(f"base64://{elem.base64}")

@@ -27,10 +27,10 @@ class BotAdapter:
     async def preset_ask(self, role: str, text: str):
         """以预设方式进行提问"""
         if role.endswith('bot') or role in {'assistant', 'chatgpt'}:
-            logger.debug(f"[预设] 响应：{text}")
+            logger.info(f"[预设] 响应：{text}")
             yield text
         else:
-            logger.debug(f"[预设] 发送：{text}")
+            logger.info(f"[预设] 发送：{text}")
             item = None
             async for item in self.ask(text): ...
             if item:

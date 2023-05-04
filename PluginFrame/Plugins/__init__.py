@@ -1,7 +1,7 @@
 import time
-from asyncio.log import logger
 from aiocqhttp import MessageSegment
 from graia.amnesia.message import MessageChain
+from loguru import logger
 
 from PluginFrame.PluginManager import ModelComponent
 from constants import config
