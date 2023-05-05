@@ -98,10 +98,7 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
     @staticmethod
     def get_tiangou_info():
         try:
-            logger.debug("开始舔狗接口")
             resp = requests.get("https://v.api.aa1.cn/api/tiangou/", timeout=10)
-            print(resp)
-            logger.debug("舔狗接口")
             text = re.findall(r"<p>(.*?)</p>", resp.text)
         except:
             text = ["接口似乎出现问题了！！"]

@@ -14,8 +14,6 @@ class MessageThread(threading.Thread):
                 data = queue.get()
                 func = data.get("func")
                 args = data.get("args")
-                print(func)
-                print(args)
                 new_loop = asyncio.new_event_loop()
                 new_loop.run_until_complete(func(args[0]))
 

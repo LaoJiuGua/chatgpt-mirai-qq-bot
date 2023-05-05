@@ -50,7 +50,8 @@ class MessageDispose:
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
-            queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
+            await plugin.start(self.plugin_parameter)
+            # queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
             # aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
         return
 
@@ -76,8 +77,8 @@ class MessageDispose:
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
             # aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
-            queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
-
+            # queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
+            await plugin.start(self.plugin_parameter)
         return
 
     @staticmethod
@@ -99,6 +100,7 @@ class MessageDispose:
                 else:
                     return False
         return True
+
 
 def transform_message_chain(text: str) -> MessageChain:
     pattern = r"\[CQ:(\w+),([^\]]+)\]"
