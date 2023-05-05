@@ -88,7 +88,7 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
         wait_info = await bot.send(message_info, wait_message)
 
         data = MessageSegment.reply(message_info.get('message_id')).__add__(
-            MessageSegment.text(await self.get_tiangou_info())
+            MessageSegment.text(self.get_tiangou_info())
         )
 
         await self.del_wait(wait_info.get("message_id"))
@@ -96,10 +96,11 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
         await bot.send(message_info, data)
 
     @staticmethod
-    async def get_tiangou_info():
+    def get_tiangou_info():
         try:
             logger.debug("开始舔狗接口")
             resp = requests.get("https://v.api.aa1.cn/api/tiangou/", timeout=10)
+            print(resp)
             logger.debug("舔狗接口")
             text = re.findall(r"<p>(.*?)</p>", resp.text)
         except:

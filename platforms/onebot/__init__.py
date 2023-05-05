@@ -7,9 +7,10 @@ from loguru import logger
 from PluginFrame.PluginManager import PluginManager
 from PluginFrame.plugin_constant import code_qq, init_manager_qq, get_manager_qq, get_black_list
 from PluginFrame.plugins_conf import PluginMatching
-from constants import config
 from TimedTasks import aioscheduler
-bot = aiocqhttp.CQHttp()
+from constants import config
+from TimedTasks.queue_message import queue
+bot = aiocqhttp.CQHttp(api_root=config.onebot.api_root)
 
 
 class MessageDispose:
@@ -49,7 +50,8 @@ class MessageDispose:
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
-            aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
+            queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
+            # aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
         return
 
     async def __group_message_dispose(self, event):
@@ -73,7 +75,9 @@ class MessageDispose:
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
-            aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
+            # aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
+            queue.put({'func': plugin.start, 'args': (self.plugin_parameter,)})
+
         return
 
     @staticmethod
