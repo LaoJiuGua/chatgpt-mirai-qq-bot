@@ -83,44 +83,24 @@ class AnimeWallpapersPlugin(BaseComponentPlugin):
     async def start(self, message_parameter):
 
         message_info = message_parameter.get("event")
-        sender = message_info.sender
-        if message_info.get("message_type") == "group":
-            logger.info(
-                f"收到群组({message_info.get('group_id')})消息：{sender.get('nickname')}({sender.get('user_id')})---->{message_info.get('message')}"
-            )
-            wait_info = await self.send_wait(self.send_group_msg, group_id=message_info.get("group_id"))(
-                message_info.get("message_id"), "请稍后..."
-            )
-            await self.del_wait(wait_info.get("message_id"))
-            data = MessageSegment.reply(message_info.get('message_id')).__add__(
-                MessageSegment.text(self.get_tiangou_info())
-            )
-            await self.send(self.send_group_msg, user_id=message_info.get("group_id"))(
-                message=str(data)
-            )
+        bot = message_parameter.get("bot")
+        wait_message = MessageSegment.reply(message_info.get("message_id")).__add__(MessageSegment.text('请稍后...'))
+        wait_info = await bot.send(message_info, wait_message)
 
-        elif message_info.get("message_type") == "private":
+        data = MessageSegment.reply(message_info.get('message_id')).__add__(
+            MessageSegment.text(await self.get_tiangou_info())
+        )
 
-            logger.info(
-                f"收到私人消息：{sender.get('nickname')}({sender.get('user_id')})---->{message_info.get('message')}"
-            )
-            wait_info = await self.send_wait(self.send_private_msg, user_id=message_info.get("user_id"))(
-                message_info.get("message_id"), "请稍后..."
-            )
-            await self.del_wait(wait_info.get("message_id"))
+        await self.del_wait(wait_info.get("message_id"))
 
-            data = MessageSegment.reply(message_info.get('message_id')).__add__(
-                MessageSegment.text(self.get_tiangou_info())
-            )
-
-            await self.send(self.send_private_msg, user_id=message_info.get("user_id"))(
-                message=str(data)
-            )
+        await bot.send(message_info, data)
 
     @staticmethod
-    def get_tiangou_info():
+    async def get_tiangou_info():
         try:
+            logger.debug("开始舔狗接口")
             resp = requests.get("https://v.api.aa1.cn/api/tiangou/", timeout=10)
+            logger.debug("舔狗接口")
             text = re.findall(r"<p>(.*?)</p>", resp.text)
         except:
             text = ["接口似乎出现问题了！！"]
@@ -136,27 +116,22 @@ class TodayHotSpotPlugin(BaseComponentPlugin):
 
     async def start(self, message_parameter):
         message_info = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+
+        wait_message = MessageSegment.reply(message_info.get("message_id")).__add__(MessageSegment.text('请稍后...'))
+        wait_info = await bot.send(message_info, wait_message)
+        messages = self.get_girl_url()
+        await self.del_wait(wait_info.get("message_id"))
 
         if message_info.get("message_type") == "group":
-
-            wait_info = await self.send_wait(self.send_group_msg, group_id=message_info.get("group_id"))(
-                message_info.get("message_id"), "请稍后..."
-            )
-            await self.del_wait(wait_info.get("message_id"))
-
             await self.send(self.send_group_node_msg, group_id=message_info.get("group_id"))(
-                messages=self.get_girl_url()
+                messages=messages
             )
 
         elif message_info.get("message_type") == "private":
 
-            wait_info = await self.send_wait(self.send_private_msg, user_id=message_info.get("user_id"))(
-                message_info.get("message_id"), "请稍后..."
-            )
-            await self.del_wait(wait_info.get("message_id"))
-
             await self.send(self.send_private_node_msg, user_id=message_info.get("user_id"))(
-                messages=self.get_girl_url()
+                messages=messages
             )
 
     def get_girl_url(self):

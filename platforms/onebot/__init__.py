@@ -1,16 +1,14 @@
 import re
-import threading
-from queue import Queue
 import aiocqhttp
-import asyncio
+from aiocqhttp import MessageSegment
 from graia.amnesia.message import MessageChain
 from graia.ariadne.message.element import Plain, Image, At
 from loguru import logger
 from PluginFrame.PluginManager import PluginManager
-from PluginFrame.plugin_constant import manager_qq, code_qq, init_manager_qq, get_manager_qq, get_black_list
+from PluginFrame.plugin_constant import code_qq, init_manager_qq, get_manager_qq, get_black_list
 from PluginFrame.plugins_conf import PluginMatching
 from constants import config
-
+from TimedTasks import aioscheduler
 bot = aiocqhttp.CQHttp()
 
 
@@ -23,12 +21,12 @@ class MessageDispose:
             if event.detail_type == "private" and event.type == "message":
                 if event.user_id in get_black_list("private"):
                     return
-                await self.__private_message_dispose(event)
+                return await self.__private_message_dispose(event)
+
             if event.detail_type == "group" and event.type == "message":
                 if event.group_id in get_black_list("group") or event.user_id in get_black_list("private"):
                     if event.user_id in get_manager_qq() and "#解禁此群" == event.message:
                         return await self.__group_message_dispose(event)
-                    return
                 await self.__group_message_dispose(event)
 
     async def __private_message_dispose(self, event):
@@ -41,8 +39,9 @@ class MessageDispose:
             # 权限认证
             is_per = await self.__permission_authentication(plugin, event)
             if not is_per:
-                await bot.send(event, "您没有权限执行这个操作")
-                return
+                message = MessageSegment.reply(event.get("message_id")).__add__(
+                    MessageSegment.text('您没有权限执行这个操作'))
+                return await bot.send(event, message)
                 # 传递参数
             self.plugin_parameter["event"] = event
             self.plugin_parameter["bot"] = bot
@@ -50,7 +49,7 @@ class MessageDispose:
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
-            return await plugin.start(self.plugin_parameter)
+            aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
         return
 
     async def __group_message_dispose(self, event):
@@ -64,8 +63,9 @@ class MessageDispose:
             # 权限认证
             is_per = await self.__permission_authentication(plugin, event)
             if not is_per:
-                await bot.send(event, "您没有权限执行这个操作")
-                return
+                message = MessageSegment.reply(event.get("message_id")).__add__(
+                    MessageSegment.text('您没有权限执行这个操作'))
+                return await bot.send(event, message)
             # 传递参数
             self.plugin_parameter["event"] = event
             self.plugin_parameter["re_obj"] = re_obj
@@ -73,7 +73,7 @@ class MessageDispose:
             self.plugin_parameter["ma_obj"] = ma_obj
             # 执行插件开始方法
             logger.info(f"执行插件：{ma_obj.plugin_name}")
-            return await plugin.start(self.plugin_parameter)
+            aioscheduler.add_job(func=plugin.start, args=(self.plugin_parameter, ))
         return
 
     @staticmethod
