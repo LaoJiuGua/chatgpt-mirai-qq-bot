@@ -445,14 +445,14 @@ class ChoosePlugin(BaseComponentPlugin):
             res = requests.get(f"https://v.api.aa1.cn/api/kugou/?msg={music_name}&type={id_}")
             res_json = res.json()
             if res_json.get("SongTitle"):
-                message = MessageSegment.music_custom(
-                    url=res_json.get("PlayLink"),
-                    audio_url=res_json.get("PlayLink"),
-                    title=res_json.get("SongTitle"),
-                    image_url=res_json.get("img"),
-
-                )
-                # message = MessageSegment.record(file=res_json.get("PlayLink"))
+                # message = MessageSegment.music_custom(
+                #     url=res_json.get("PlayLink"),
+                #     audio_url=res_json.get("PlayLink"),
+                #     title=res_json.get("SongTitle"),
+                #     image_url=res_json.get("img"),
+                #
+                # )
+                message = MessageSegment.record(file=res_json.get("PlayLink"))
             else:
                 message = MessageSegment.text(res_json.get("msg"))
         else:
