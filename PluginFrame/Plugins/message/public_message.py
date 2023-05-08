@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import re
 from io import BytesIO
 import requests
@@ -216,23 +217,34 @@ class ImageVariationPlugin(BaseComponentPlugin):
         return img_b64
 
 
-@registration_directive(matching=r'#点歌(| )(.*)', message_types=("private", "group"))
+@registration_directive(matching=r'#点歌(.*|) (.*)', message_types=("private", "group"))
 class MusicPlugin(BaseComponentPlugin):
     __name__ = 'MusicPlugin'
     desc = "点歌系统（网易云）"
-    docs = '#点歌 [歌曲名称]'
+    docs = '#点歌[网易云|酷狗] [歌曲名称]'
     permissions = ("admin",)
 
     async def start(self, message_parameter):
+
+        types = {
+            "网易云": "netease",
+            "酷狗": "kugou",
+        }
+
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
-        _, music_name = message_parameter.get("re_obj").groups()
+        music_type, music_name = message_parameter.get("re_obj").groups()
+
+        music_type = types.get(music_type, '') or "netease"
 
         wait_info = await bot.send(event, MessageSegment.reply(event.get("message_id")).__add__(
             MessageSegment.text('请稍后...')
         ))
-        print(wait_info)
-        r_id_info, r_ids = self.get_music(music_name)
+
+        if music_type == "netease":
+            r_id_info, r_ids = self.get_netease_music(music_name)
+        else:
+            r_id_info, r_ids = await self.get_kugou_music(music_name)
 
         await self.del_wait(wait_info.get("message_id"))
 
@@ -251,7 +263,10 @@ class MusicPlugin(BaseComponentPlugin):
                     messages=r_id_info
                 )
             set_choose_data(
-                event.user_id, event.message_type, 'mus', {"r_ids": r_ids, "message_id": message_info.get("message_id")}
+                event.user_id, event.message_type, 'mus', {
+                    "r_ids": r_ids, "message_id": message_info.get("message_id"), "type": music_type,
+                    "music_name": music_name
+                }
             )
 
         elif event.get("message_type") == "private":
@@ -260,12 +275,16 @@ class MusicPlugin(BaseComponentPlugin):
                 messages=r_id_info
             )
             set_choose_data(
-                event.user_id, event.message_type, 'mus', {"r_ids": r_ids, "message_id": message_info.get("message_id")}
+                event.user_id, event.message_type, 'mus', {
+                    "r_ids": r_ids, "message_id": message_info.get("message_id"), "type": music_type,
+                    "music_name": music_name
+                }
             )
 
-    def get_music(self, name):
+    def get_netease_music(self, name):
         _list = []
-        r_ids = []
+        r_ids = {}
+
         try:
             res = requests.get(
                 f"https://api.pearktrue.cn/api/music/search.php?name={name}&type=netease&page=1", timeout=10
@@ -276,15 +295,39 @@ class MusicPlugin(BaseComponentPlugin):
                 if not id:
                     continue
                 r_id = id.group(1)
-                r_ids.append(r_id)
+                r_ids[str(index+1)] = r_id
                 message = MessageSegment.node_custom(
                     nickname="北.", user_id=1113855149,
-                    content=f"""{MessageSegment(type_="reply", data={"text": "序号："+str(index), "qq": 1113855149})}歌名：《{music.get('title')}》\n演唱：{music.get('author')}"""
+                    content=f"""{MessageSegment(type_="reply", data={"text": "序号："+str(index+1), "qq": 1113855149})}歌名：《{music.get('title')}》\n演唱：{music.get('author')}"""
                 )
                 _list.append(message)
             return _list, r_ids
         except:
-            return False
+            return False, False
+
+    async def get_kugou_music(self, name):
+        _list = []
+        r_ids = {}
+
+        try:
+            res = requests.get(
+                f"https://v.api.aa1.cn/api/kugou/?msg={name}", timeout=10
+            )
+            a = json.loads(res.text, strict=False)
+            data = a.get("data")
+            data_1 = data.split('\n')
+            for data_info in data_1:
+                data_2 = data_info.split('：')
+                if data_2[0]:
+                    r_ids[str(data_2[0])] = data_2[0]
+                    message = MessageSegment.node_custom(
+                        nickname="北.", user_id=1113855149,
+                        content=f"""{MessageSegment(type_="reply", data={"text": "序号："+str(data_2[0]), "qq": 1113855149})}《{data_2[1]}》"""
+                    )
+                    _list.append(message)
+            return _list, r_ids
+        except:
+            return False, False
 
 
 @registration_directive(matching=r'#王者语音(| )(.*)', message_types=("private", "group"))
@@ -389,12 +432,31 @@ class ChoosePlugin(BaseComponentPlugin):
         r_ids = mus.get('r_ids')
         if not r_ids:
             return
-        try:
-            id_ = r_ids[int(choose_id)]
-        except:
+        if choose_id not in r_ids.keys():
             await bot.send(event, "歌曲序号不正确！重新选择")
             return False
-        message = MessageSegment.music(type_='163', id_=id_)
+
+        id_ = r_ids.get(choose_id)
+        mus_type = mus.get("type")
+        music_name = mus.get("music_name")
+        if mus_type == "netease":
+            message = MessageSegment.music(type_='163', id_=id_)
+        elif mus_type == "kugou":
+            res = requests.get(f"https://v.api.aa1.cn/api/kugou/?msg={music_name}&type={id_}")
+            res_json = res.json()
+            if res_json.get("SongTitle"):
+                message = MessageSegment.music_custom(
+                    url=res_json.get("PlayLink"),
+                    audio_url=res_json.get("PlayLink"),
+                    title=res_json.get("SongTitle"),
+                    image_url=res_json.get("img"),
+
+                )
+                # message = MessageSegment.record(file=res_json.get("PlayLink"))
+            else:
+                message = MessageSegment.text(res_json.get("msg"))
+        else:
+            return
         await self.del_wait(mus.get("message_id", ''))
         await bot.send(event, message)
         del_choose_data(event.user_id)
