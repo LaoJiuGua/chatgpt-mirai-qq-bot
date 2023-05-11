@@ -16,7 +16,7 @@ tor_path = os.path.dirname(os.path.abspath(__file__))
 class TarotPlugin(BaseComponentPlugin):
     __name__ = 'TarotPlugin'
     desc = "塔罗牌"
-    docs = '#抽[1-3]张塔罗牌'
+    docs = '#抽[1-3]张[塔罗牌|大阿卡纳|小阿卡纳]'
     permissions = ("all",)
 
     # 插件内
@@ -43,8 +43,18 @@ class TarotPlugin(BaseComponentPlugin):
         ))
 
         card_list_infos = []
+        exclude_num = []
         for i in range(int(match)):
             num = random.randint(start, length)
+            # 去掉抽取的重复牌
+            if num in exclude_num:
+                while True:
+                    num = random.randint(start, length)
+                    exclude_num.append(num)
+                    if num not in exclude_num:
+                        break
+            exclude_num.append(num)
+
             card = self.tarots_data.get(str(num))
             p = random.randint(0, 1)
             name = card.get("name")
