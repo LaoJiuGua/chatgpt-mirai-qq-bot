@@ -82,7 +82,7 @@ def get_choose_data(user_id, message_type):
     return {}
 
 
-def del_choose_data(user_id):
+def del_choose_data(user_id, ):
     if str(user_id) in choose_data:
         choose_data.pop(str(user_id))
 
