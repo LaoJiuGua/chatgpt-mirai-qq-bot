@@ -16,7 +16,7 @@ class NoticeDispose:
             infos = get_cache("group_exit") or []
             if event.group_id in infos:
                 if event.sub_type == "leave":
-                    message = MessageSegment.text(f'成员：{event.sender.get("name")}<{event.user_id}>退群了！')
+                    message = MessageSegment.text(f'成员<{event.user_id}>退群了！')
                 elif event.sub_type == "kick":
                     message = MessageSegment.text(f'管理员<{event.operator_id}>将成员<{event.user_id}>T出群聊！')
                 else:
