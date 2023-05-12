@@ -8,18 +8,13 @@ from loguru import logger
 
 class SendRequest(BaseModel):
 
-    async def send_request(self, api: str, number_of_retries=4):
-        number_of_retries = number_of_retries
+    async def send_request(self, api: str):
         try:
             return await bot.call_action(
                 api,
                 **self.dict()
             )
         except Exception as e:
-            number_of_retries -= 1
-            if number_of_retries >= 0:
-                logger.info(f"消息发送重试次数-{number_of_retries}")
-                return await self.send_request(api, number_of_retries)
             logger.error(f"发送请求失败---{e}")
 
     async def del_message(self, message_id):

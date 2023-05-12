@@ -1,4 +1,5 @@
 from aiocqhttp import MessageSegment
+from loguru import logger
 
 import constants
 from PluginFrame.Plugins import BaseComponentPlugin
@@ -6,6 +7,8 @@ from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_ma
     get_black_list, set_black_list, del_black_list
 from PluginFrame.plugins_conf import registration_directive
 from constants import config, botManager
+from cqhttp.api import CQApiConfig
+from cqhttp.request_model import GetMessage
 from manager.bot import BotManager
 from middlewares.ratelimit import manager as ratelimit_manager
 from utils.text_to_img import to_image
@@ -212,3 +215,20 @@ class RebootPlugin(BaseComponentPlugin):
         constants.botManager = BotManager(config)
         await botManager.login()
         await bot.send(event, "登录结束")
+
+
+@registration_directive(matching=r'^\[CQ:reply,id=(-\d+|\d+)\](\[CQ:at,qq=(\d+)\]|)(| )撤回',
+                        message_types=("private", "group"))
+class MessageWithdrawPlugin(BaseComponentPlugin):
+    __name__ = 'MessageWithdrawPlugin'
+    desc = "消息撤回"
+    docs = ''
+    permissions = ("all",)
+
+    async def start(self, message_parameter):
+
+        message_id, _, qq, _ = message_parameter.get("re_obj").groups()
+        try:
+            await self.del_wait(message_id)
+        except Exception as e:
+            logger.debug(f"消息撤回失败---{e}")

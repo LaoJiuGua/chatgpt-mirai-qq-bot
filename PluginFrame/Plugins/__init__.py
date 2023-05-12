@@ -60,10 +60,10 @@ class BaseComponentPlugin(ModelComponent):
     @staticmethod
     async def del_wait(message_id):
         time.sleep(2)
-        await DeleteMsgRequest(message_id=message_id).send_request(
+        info = await DeleteMsgRequest(message_id=message_id).send_request(
             CQApiConfig.message.delete_msg.Api
         )
-        return True
+        return info
 
     @staticmethod
     def response(event, is_group: bool, bot):
