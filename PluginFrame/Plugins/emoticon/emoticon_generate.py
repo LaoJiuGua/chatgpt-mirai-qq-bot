@@ -283,10 +283,13 @@ class EmoticonListPlugin(BaseComponentPlugin):
     async def start(self, message_parameter):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
-
+        num = 1
         message = "## 表情包列表如下：\n"
         for key, value in sj.items():
-            message += f"{key} |"
+            message += f" - {key}"
+            if num % 5 == 0:
+                message += "\n"
+            num += 1
 
         image_info = await to_image(
             message,
