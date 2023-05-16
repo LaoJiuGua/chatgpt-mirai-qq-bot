@@ -241,7 +241,7 @@ sj = {
 }
 
 
-@registration_directive(matching=r'(.*)\[CQ:at,qq=(\d+)\][| ]', message_types=("group", ))
+@registration_directive(matching=r'(.*)\[CQ:at,qq=(\d+)\]( |)', message_types=("group", ))
 class EmoticonPlugin(BaseComponentPlugin):
     __name__ = 'EmoticonPlugin'
     desc = "QQ表情包生成"
