@@ -252,7 +252,7 @@ class EmoticonPlugin(BaseComponentPlugin):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
         re_obj = message_parameter.get("re_obj")
-        emo_type, at_qq = re_obj.groups()
+        emo_type, at_qq, _ = re_obj.groups()
 
         sj_info = sj.get(emo_type)
         if not sj_info:
