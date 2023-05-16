@@ -224,6 +224,7 @@ sj = {
 @registration_directive(matching=r'(.*)\[CQ:at,qq=(\d+)\]( |)', message_types=("group", ))
 class EmoticonPlugin(BaseComponentPlugin):
     __name__ = 'EmoticonPlugin'
+    plu_name = '表情包插件'
     desc = "QQ表情包生成"
     docs = '表情包名称[@群友]'
     permissions = ("all",)
@@ -256,8 +257,9 @@ class EmoticonPlugin(BaseComponentPlugin):
 @registration_directive(matching=r'#表情包列表', message_types=("group", ))
 class EmoticonListPlugin(BaseComponentPlugin):
     __name__ = 'EmoticonListPlugin'
+    plu_name = '表情包插件'
     desc = "表情包列表"
-    docs = ''
+    docs = '#表情包列表'
     permissions = ("all",)
 
     async def start(self, message_parameter):

@@ -2,7 +2,7 @@ import re
 import dataclasses
 from loguru import logger
 
-from PluginFrame.plugin_constant import directives_keys, directives, plugin_desc, plugin_desc_key
+from PluginFrame.plugin_constant import directives_keys, directives, plugin_desc, plugin_desc_key, plugins
 
 
 class DirectivesPluginMeta(type):
@@ -38,7 +38,13 @@ class DirectivesPluginMeta(type):
         for message_type in value.message_types:
             directives_keys[message_type].append(value.matching)
 
+        if value.plu_name and value.plu_name not in plugins:
+            plugins[value.plu_name] = {}
+
         if value.desc:
+            if value.plu_name:
+                plugins[value.plu_name][value.desc] = value.plugin_name
+
             plugin_desc[value.desc] = dict(
                 docs=value.docs,
                 plugin_name=value.plugin_name,
@@ -58,6 +64,7 @@ class DirectivesField:
     desc: str = ''
     docs: str = ''
     permissions: tuple = ("all",)
+    plu_name: str = ''
 
 
 class PluginMatching(metaclass=DirectivesPluginMeta):
@@ -67,20 +74,22 @@ class PluginMatching(metaclass=DirectivesPluginMeta):
 def registration_directive(matching: str, message_types: tuple):
     def wrapper(cls):
         plugin_name = cls.__name__
-        desc, docs, permissions = '', '', ("all",)
+        desc, docs, permissions, plu_name = '', '', ("all",), ''
         if hasattr(cls, "desc"):
             desc = cls.desc
         if hasattr(cls, "docs"):
             docs = cls.docs
         if hasattr(cls, "permissions"):
             permissions = cls.permissions
+        if hasattr(cls, "plu_name"):
+            plu_name = cls.plu_name
 
         setattr(
             PluginMatching,
             plugin_name,
             DirectivesField(
                 matching=matching, plugin_name=plugin_name, message_types=message_types,
-                desc=desc, docs=docs, permissions=permissions
+                desc=desc, docs=docs, permissions=permissions, plu_name=plu_name
             )
         )
         logger.info(f"注册{','.join(message_types)}指令：{plugin_name} - {matching}")

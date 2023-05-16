@@ -18,6 +18,7 @@ class TarotPlugin(BaseComponentPlugin):
     desc = "塔罗牌"
     docs = '#抽[1-3]张[塔罗牌|大阿卡纳|小阿卡纳]'
     permissions = ("all",)
+    plu_name = '塔罗牌插件'
 
     # 插件内
     bed = "https://gitcode.net/shudorcl/zbp-tarot/-/raw/master/"
@@ -92,6 +93,7 @@ class TarotFormationPlugin(BaseComponentPlugin):
     desc = "塔罗牌阵"
     docs = '#[塔罗|大阿卡纳|小阿卡纳|混合]牌阵[圣三角|时间之流|四要素|五牌阵|吉普赛十字|马蹄|六芒星]'
     permissions = ("all",)
+    plu_name = '塔罗牌插件'
 
     # 插件内
     bed = "https://gitcode.net/shudorcl/zbp-tarot/-/raw/master/"

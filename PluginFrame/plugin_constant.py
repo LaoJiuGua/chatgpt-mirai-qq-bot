@@ -18,6 +18,9 @@ black_list = {
     "group": []
 }
 
+# 插件集合
+plugins = {}
+
 # 插件描述
 plugin_desc = {}
 
