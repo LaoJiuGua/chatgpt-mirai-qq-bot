@@ -2,6 +2,7 @@ from aiocqhttp import MessageSegment
 
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugins_conf import registration_directive
+from utils.html_to_image import html_to_png
 from utils.text_to_img import to_image
 
 sj = {
@@ -283,17 +284,6 @@ class EmoticonListPlugin(BaseComponentPlugin):
     async def start(self, message_parameter):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
-        num = 1
-        message = "## 表情包列表如下：\n"
-        for key, value in sj.items():
-            message += f" - {key}"
-            if num % 5 == 0:
-                message += "\n"
-            num += 1
-
-        image_info = await to_image(
-            message,
-            qr_code="https://file.52xiaobei.cn/bFxrC3Wet70up4PB4sFV1FCXHCsud4JA/logo.png"
-        )
-        resp = MessageSegment.image(f"base64://{image_info.base64}")
+        image_base61 = html_to_png("emoticon", sj)
+        resp = MessageSegment.image(f"base64://{image_base61}")
         await bot.send(event, resp)
