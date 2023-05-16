@@ -229,6 +229,8 @@ class MusicPlugin(BaseComponentPlugin):
         types = {
             "网易云": "netease",
             "酷狗": "kugou",
+            "QQ": "QQ",
+            "qq": "QQ",
         }
 
         event = message_parameter.get("event")
@@ -243,6 +245,8 @@ class MusicPlugin(BaseComponentPlugin):
 
         if music_type == "netease":
             r_id_info, r_ids = self.get_netease_music(music_name)
+        elif music_type == "QQ":
+            r_id_info, r_ids = await self.get_qq_music(music_name)
         else:
             r_id_info, r_ids = await self.get_kugou_music(music_name)
 
@@ -328,6 +332,32 @@ class MusicPlugin(BaseComponentPlugin):
             return _list, r_ids
         except:
             return False, False
+
+    async def get_qq_music(self, name):
+        _list = []
+        r_ids = {}
+
+        try:
+            res = requests.get(
+                f"https://api.xingzhige.com/API/QQmusicVIP_new/?msg={name}&limit=30", timeout=10
+            )
+
+            data_json = res.json()
+            if data_json.get("code") == 0:
+                music_data = data_json.get("data")
+                for index, data_info in enumerate(music_data):
+                    r_ids[str(index+1)] = {"id": data_info.get("songid"), "mid": data_info.get("mid")}
+                    message = MessageSegment.node_custom(
+                        nickname="北.", user_id=1113855149,
+                        content=f"""{MessageSegment(type_="reply", data={"text": "序号：" + str(index+1), "qq": 1113855149})}歌曲：《{data_info.get("song")}》\n演唱：{" ".join(data_info.get("singers"))}"""
+                    )
+                    _list.append(message)
+
+                return _list, r_ids
+            else:
+                return False, data_json.get("msg")
+        except:
+            return False, "查询歌曲失败！"
 
 
 @registration_directive(matching=r'#王者语音(| )(.*)', message_types=("private", "group"))
@@ -446,7 +476,7 @@ class ChoosePlugin(BaseComponentPlugin):
             res_json = res.json()
             if res_json.get("PlayLink"):
                 # message = MessageSegment.music_custom(
-                #     url=res_json.get("PlayLink"),
+                #     url="http://www.kugou.com/song",
                 #     audio_url=res_json.get("PlayLink"),
                 #     title=res_json.get("SongTitle"),
                 #     image_url=res_json.get("img"),
@@ -455,6 +485,9 @@ class ChoosePlugin(BaseComponentPlugin):
                 message = MessageSegment.record(file=res_json.get("PlayLink"))
             else:
                 message = MessageSegment.text(res_json.get("msg"))
+
+        elif mus_type == "QQ":
+            message = MessageSegment.music(type_='qq', id_=id_.get("id"))
         else:
             return
         await self.del_wait(mus.get("message_id", ''))
