@@ -38,7 +38,7 @@ class PluginConstant:
 
     @property
     def plugin_desc_key(self):
-        return self.__plugin_desc
+        return self.__plugin_desc_key
 
     def add_directives(self, key, value):
         self.__directives[key] = value
