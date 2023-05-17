@@ -1,5 +1,5 @@
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq, \
+from PluginFrame.plugin_constant import  code_qq, get_manager_qq, add_manager_qq,\
     get_black_list, set_black_list, del_black_list
 from PluginFrame.plugins_conf import registration_directive
 

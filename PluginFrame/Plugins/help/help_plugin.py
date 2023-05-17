@@ -1,7 +1,6 @@
 from aiocqhttp import MessageSegment
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import plugin_desc, manager_qq, code_qq, get_manager_qq, add_manager_qq, \
-    get_black_list, set_black_list, del_black_list, plugins
+from PluginFrame.plugin_constant import code_qq, get_manager_qq, plugin_constant
 from PluginFrame.plugins_conf import registration_directive
 from utils.text_to_img import to_image
 from utils.html_to_image import html_to_png
@@ -22,14 +21,14 @@ class MenuPlugin(BaseComponentPlugin):
         re_obj = message_parameter.get("re_obj")
         text = re_obj.group(1)
 
-        if text in plugins.keys():
+        if text in plugin_constant.plugins.keys():
             info = f'# {text}插件菜单：\n'
             menu_info = '### 普通用户权限功能菜单如下：\n'
             code_menu_info = '\n### 开发者权限菜单如下：\n'
             manager_menu_info = '\n### 管理员权限菜单如下：\n'
-            plugin_desc_name = plugins.get(text)
+            plugin_desc_name = plugin_constant.plugins.get(text)
             for key, value in plugin_desc_name.items():
-                plugin_info = plugin_desc.get(key)
+                plugin_info = plugin_constant.plugin_desc.get(key)
                 if not plugin_info.get('docs'):
                     continue
 
@@ -69,6 +68,6 @@ class ListPlugin(BaseComponentPlugin):
         event = message_parameter.get("event")
         # 获取机器人对象
         bot = message_parameter.get("bot")
-        image_base64 = html_to_png("help", plugins)
+        image_base64 = html_to_png("help", plugin_constant.plugins)
         resp = MessageSegment.image(f"base64://{image_base64}")
         await bot.send(event, resp)

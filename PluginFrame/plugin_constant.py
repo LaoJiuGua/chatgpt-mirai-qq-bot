@@ -3,34 +3,86 @@ import json
 import os
 import pickle
 from constants import config
-
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-directives = {}
 
-# 命令插件索引
-directives_keys = {
-    "private": [],
-    "group": []
-}
+
+class PluginConstant:
+    __directives = {}
+    # 命令插件索引
+    __directives_keys = {
+        "private": [],
+        "group": []
+    }
+    # 插件集合
+    __plugins = {}
+    # 插件描述
+    __plugin_desc = {}
+    # 插件描述索引
+    __plugin_desc_key = {}
+
+    @property
+    def directives(self):
+        return self.__directives
+
+    @property
+    def directives_keys(self):
+        return self.__directives_keys
+
+    @property
+    def plugins(self):
+        return self.__plugins
+
+    @property
+    def plugin_desc(self):
+        return self.__plugin_desc
+
+    @property
+    def plugin_desc_key(self):
+        return self.__plugin_desc
+
+    def add_directives(self, key, value):
+        self.__directives[key] = value
+
+    def add_directives_keys(self, key, value):
+        if key not in ("private", "group"):
+            raise ValueError("Key 未找到")
+        self.__directives_keys[key].append(value)
+
+    def add_plugins(self, key, value):
+        self.__plugins[key] = value
+
+    def add_plugin_desc(self, key, value):
+        self.__plugin_desc[key] = value
+
+    def add_plugin_desc_key(self, key, value):
+        self.__plugin_desc_key[key] = value
+
+    def del_directives(self):
+        self.__directives = {}
+
+    def del_directives_keys(self):
+        self.__directives_keys = {"private": [], "group": []}
+
+    def del_plugins(self):
+        self.__plugins = {}
+
+    def del_plugin_desc(self):
+        self.__plugin_desc = {}
+
+    def del_plugin_desc_key(self):
+        self.__plugin_desc_key = {}
+
+
+plugin_constant = PluginConstant()
+
+manager_qq = [config.onebot.manager_qq, ]
+
+code_qq = config.onebot.manager_qq
 
 black_list = {
     "private": [],
     "group": []
 }
-
-# 插件集合
-plugins = {}
-
-# 插件描述
-plugin_desc = {}
-
-# 插件描述索引
-plugin_desc_key = {}
-
-
-manager_qq = [config.onebot.manager_qq, ]
-
-code_qq = config.onebot.manager_qq
 
 choose_data = {}
 
@@ -125,3 +177,10 @@ def del_black_list(black_type, black):
 
     return True
 
+
+def reset_plugins():
+    plugin_constant.del_plugins()
+    plugin_constant.del_plugin_desc()
+    plugin_constant.del_plugin_desc_key()
+    plugin_constant.del_directives()
+    plugin_constant.del_directives_keys()

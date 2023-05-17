@@ -1,9 +1,13 @@
+import os
+import sys
+
 import requests
 from aiocqhttp import MessageSegment
 from loguru import logger
 import constants
+from PluginFrame.PluginManager import PluginManager
 from PluginFrame.Plugins import BaseComponentPlugin
-from PluginFrame.plugin_constant import del_choose_data, get_choose_data
+from PluginFrame.plugin_constant import del_choose_data, get_choose_data, reset_plugins
 from PluginFrame.plugins_conf import registration_directive
 from constants import config, botManager
 from manager.bot import BotManager
@@ -124,3 +128,21 @@ class ChoosePlugin(BaseComponentPlugin):
         await bot.send(event, message)
         del_choose_data(event.user_id)
         return message
+
+
+@registration_directive(matching=r'#重新加载插件', message_types=("private", "group"))
+class RePlugin(BaseComponentPlugin):
+    __name__ = 'RePlugin'
+    desc = ""
+    docs = ""
+    permissions = ("code",)
+    plu_name = ''
+
+    async def start(self, message_parameter):
+
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        reset_plugins()
+        PluginManager.PluginPath = 'Plugins'
+        PluginManager.reload_the_plugin()
+        await bot.send(event, "重新加载插件成功！")

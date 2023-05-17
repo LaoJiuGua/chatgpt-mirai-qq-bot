@@ -13,6 +13,9 @@ from graia.ariadne.message.element import Image, Plain, Voice
 
 
 class BaseComponentPlugin(ModelComponent):
+
+    __name__ = 'BaseComponentPlugin'
+
     @staticmethod
     async def send_group_msg(group_id, message):
         return await SendGroupMsgRequest(group_id=group_id, message=message).send_request(

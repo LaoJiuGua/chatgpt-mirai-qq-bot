@@ -2,7 +2,7 @@ import re
 import dataclasses
 from loguru import logger
 
-from PluginFrame.plugin_constant import directives_keys, directives, plugin_desc, plugin_desc_key, plugins
+from PluginFrame.plugin_constant import plugin_constant
 
 
 class DirectivesPluginMeta(type):
@@ -10,20 +10,20 @@ class DirectivesPluginMeta(type):
     def __init__(cls, _class_name, _base, _class_obj, **kwargs):
         for key, value in _class_obj.items():
             if isinstance(value, DirectivesField):
-                if value.matching in directives_keys:
+                if value.matching in plugin_constant.directives_keys:
                     raise ValueError(f"指令 {value.matching} 已存在")
-                directives[key] = value
+                plugin_constant.add_directives(key, value)
                 for message_type in value.message_types:
-                    directives_keys[message_type].append(value.matching)
+                    plugin_constant.add_directives_keys(message_type, value.matching)
         super(DirectivesPluginMeta, cls).__init__(_class_name, _base, _class_obj, **kwargs)
 
     @property
     def directives(self):
-        return directives
+        return plugin_constant.directives
 
     async def find_matching(self, matching, message_type):
         directive, match_obj = None, None
-        for key, value in directives.items():
+        for key, value in plugin_constant.directives.items():
             if re.fullmatch(value.matching, matching) and message_type in value.message_types:
                 match_obj = re.fullmatch(value.matching, matching)
                 directive = value
@@ -31,27 +31,27 @@ class DirectivesPluginMeta(type):
 
     def __setattr__(cls, key, value):
         for message_type in value.message_types:
-            if value.matching in directives_keys[message_type]:
+            if value.matching in plugin_constant.directives_keys[message_type]:
                 raise ValueError(f"指令 {value.matching} 已存在 {message_type}")
-        directives[key] = value
+        plugin_constant.directives[key] = value
 
         for message_type in value.message_types:
-            directives_keys[message_type].append(value.matching)
+            plugin_constant.add_directives_keys(message_type, value.matching)
 
-        if value.plu_name and value.plu_name not in plugins:
-            plugins[value.plu_name] = {}
+        if value.plu_name and value.plu_name not in plugin_constant.plugins:
+            plugin_constant.add_plugins(value.plu_name, {})
 
         if value.desc:
             if value.plu_name:
-                plugins[value.plu_name][value.desc] = value.plugin_name
+                plugin_constant.plugins[value.plu_name][value.desc] = value.plugin_name
 
-            plugin_desc[value.desc] = dict(
+            plugin_constant.plugin_desc[value.desc] = dict(
                 docs=value.docs,
                 plugin_name=value.plugin_name,
                 permissions=value.permissions,
                 message_types=value.message_types,
             )
-            plugin_desc_key[value.desc] = value.plugin_name
+            plugin_constant.plugin_desc_key[value.desc] = value.plugin_name
 
         return True
 
