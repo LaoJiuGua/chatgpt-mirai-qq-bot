@@ -30,7 +30,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(1)
         # message = MessageSegment.video(self.get_girl_url(title))
-        message = MessageSegment.video(f"file:/{self.get_girl_url(title)}")
+        message = MessageSegment.video(f"file:///{self.get_girl_url(title)}")
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
@@ -51,7 +51,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         # except:
         #     url = "http://xin-hao.top/sqlWork/randomDouyin"
         # logger.info("取到的url为：{}".format(url))
-        return video_path
+        return video_path.replace("/", "\\")
 
 
 @registration_directive(matching=r'^#视频搜索(\d+|) (.*)-(\d+)', message_types=("private", "group"))
