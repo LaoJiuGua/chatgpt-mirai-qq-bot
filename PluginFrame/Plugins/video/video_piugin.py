@@ -12,11 +12,11 @@ from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
 
 
-@registration_directive(matching=r'^#(美女|放松心情|轻松一刻)', message_types=("private", "group"))
+@registration_directive(matching=r'^#(美女视频|菠萝拌饭|帅哥视频)', message_types=("private", "group"))
 class DouYinBellePlugin(BaseComponentPlugin):
     __name__ = 'DouYinBellePlugin'
     desc = "抖音MM短视频"
-    docs = '#美女 / #放松心情 / #轻松一刻'
+    docs = '#美女视频 / #菠萝拌饭 / #轻松一刻'
     permissions = ("all",)
     plu_name = '视频插件'
 
@@ -24,7 +24,9 @@ class DouYinBellePlugin(BaseComponentPlugin):
 
         message_info = message_parameter.get("event")
         sender = message_info.sender
-        message = MessageSegment.video(self.get_girl_url())
+        re_obj = message_parameter.get("re_obj")
+        title = re_obj.groups(1)
+        message = MessageSegment.video(self.get_girl_url(title))
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
@@ -35,8 +37,8 @@ class DouYinBellePlugin(BaseComponentPlugin):
             )
 
     @staticmethod
-    def get_girl_url():
-        resp = requests.get("http://xin-hao.top/sqlWork/randomDouyin")
+    def get_girl_url(title):
+        resp = requests.get(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
         try:
             url = resp.history[1].url
         except:

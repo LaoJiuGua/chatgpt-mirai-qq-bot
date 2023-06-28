@@ -9,6 +9,7 @@ key = "d73IGg5Nn4hXl0a8CzHeUrGUgV"
 
 sj = {
     '超市': {'url': 'http://api.caonm.net/api/chaop/j?qq=', 'liang': 2},
+    '超': {'url': 'https://api.caonm.net/api/chao/api?qq=', 'liang': 2},
     '没业务': {'url': 'http://api.caonm.net/api/yewu/y?qq=', 'liang': 0},
     '美女电视': {'url': 'http://api.caonm.net/api/dsjp/j?qq=', 'liang': 0},
     '背刺': {'url': 'http://api.caonm.net/api/bei/b?qq=', 'liang': 2},
