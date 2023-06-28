@@ -52,7 +52,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         # except:
         #     url = "http://xin-hao.top/sqlWork/randomDouyin"
         # logger.info("取到的url为：{}".format(url))
-        return video_path
+        return video_path.replace("-", "")
 
 
 @registration_directive(matching=r'^#视频搜索(\d+|) (.*)-(\d+)', message_types=("private", "group"))
