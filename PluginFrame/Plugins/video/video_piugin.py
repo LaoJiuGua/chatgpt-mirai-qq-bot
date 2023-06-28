@@ -1,6 +1,8 @@
 import base64
 import io
+import os
 import re
+import uuid
 from io import BytesIO
 import requests
 from loguru import logger
@@ -27,7 +29,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(1)
         # message = MessageSegment.video(self.get_girl_url(title))
-        message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
+        message = MessageSegment.video(f"file://{self.get_girl_url(title)}")
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
@@ -40,12 +42,16 @@ class DouYinBellePlugin(BaseComponentPlugin):
     @staticmethod
     def get_girl_url(title):
         resp = requests.get(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
-        try:
-            url = resp.history[1].url
-        except:
-            url = "http://xin-hao.top/sqlWork/randomDouyin"
-        logger.info("取到的url为：{}".format(url))
-        return url
+        path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        video_path = os.path.join(path, f"data/video/{uuid.uuid4()}.mp4")
+        with open(os.path.join(path, f"data/video/{uuid.uuid4()}.mp4"), "wb") as f:
+            f.write(resp.content)
+        # try:
+        #     url = resp.history[1].url
+        # except:
+        #     url = "http://xin-hao.top/sqlWork/randomDouyin"
+        # logger.info("取到的url为：{}".format(url))
+        return video_path
 
 
 @registration_directive(matching=r'^#视频搜索(\d+|) (.*)-(\d+)', message_types=("private", "group"))
