@@ -3,7 +3,7 @@ import os
 import time
 
 cache_data = {}
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path = os.path.dirname(os.path.dirname(os.path.abspath(os.path.abspath(os.path.abspath(__file__)))))
 
 
 def init_cache():
