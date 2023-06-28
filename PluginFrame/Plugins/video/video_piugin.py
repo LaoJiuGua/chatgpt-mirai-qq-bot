@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+import pathlib
 import re
 import uuid
 from io import BytesIO
@@ -30,7 +31,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(1)
         # message = MessageSegment.video(self.get_girl_url(title))
-        message = MessageSegment.video(f"file:\\\\\\{self.get_girl_url(title)}")
+        message = MessageSegment.video(pathlib.Path(self.get_girl_url(title)).as_uri())
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
