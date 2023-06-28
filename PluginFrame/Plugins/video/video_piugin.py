@@ -45,7 +45,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
     def get_girl_url(title):
         resp = requests.get(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
         video_path = os.path.join(path, f"data/video/{uuid.uuid4()}.mp4")
-        with open(video_path, "wb") as f:
+        with open(video_path.replace("-", ""), "wb") as f:
             f.write(resp.content)
         # try:
         #     url = resp.history[1].url
