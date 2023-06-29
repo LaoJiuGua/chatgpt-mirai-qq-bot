@@ -94,7 +94,6 @@ class KunKunVoicePlugin(BaseComponentPlugin):
     async def start(self, message_parameter):
         event = message_parameter.get("event")
         bot = message_parameter.get("bot")
-        _, king_name = message_parameter.get("re_obj").groups()
         message = MessageSegment.record(file="http://api.caonm.net/api/kunkun/k?key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
         await bot.send(event, message)
 
