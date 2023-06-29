@@ -46,7 +46,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
     @staticmethod
     def get_girl_url(title):
         resp = requests.get(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV")
-        video_path = f"{uuid.uuid4()}.mp4"
+        video_path = f"./{uuid.uuid4()}.mp4"
         with open(video_path.replace("-", ""), "wb") as f:
             f.write(resp.content)
         # try:
