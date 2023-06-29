@@ -71,3 +71,26 @@ class ImageVariationPlugin(BaseComponentPlugin):
         new_img.save(buffer, format=fmt)
         img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
         return img_b64
+
+
+@registration_directive(matching=r'^#(黑丝|白丝)', message_types=("private", "group"))
+class BlackSilkPlugin(BaseComponentPlugin):
+    __name__ = 'BlackSilkPlugin'
+    desc = "黑丝/白丝"
+    docs = '#黑丝|白丝'
+    permissions = ("all",)
+    plu_name = '图片插件'
+
+    async def start(self, message_parameter):
+        event = message_parameter.get("event")
+        bot = message_parameter.get("bot")
+        re_obj = message_parameter.get("re_obj")
+        title = re_obj.groups(1)
+        if title == "黑丝":
+            url = "http://api.caonm.net/api/bhs/h?key=d73IGg5Nn4hXl0a8CzHeUrGUgV"
+        else:
+            url = "http://api.caonm.net/api/bhs/b?key=d73IGg5Nn4hXl0a8CzHeUrGUgV"
+        message = MessageSegment.reply(event.message_id).__add__(
+            MessageSegment.image(file=url, cache=False)
+        )
+        await bot.send(event, message)
