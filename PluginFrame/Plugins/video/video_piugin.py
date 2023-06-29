@@ -30,6 +30,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
         sender = message_info.sender
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(0)
+        print(title)
         # message = MessageSegment.video(self.get_girl_url(title))
         message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
                                        cache=False)

@@ -86,6 +86,7 @@ class BlackSilkPlugin(BaseComponentPlugin):
         bot = message_parameter.get("bot")
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(0)
+        print(title)
         if title == "黑丝":
             url = "http://api.caonm.net/api/bhs/h?key=d73IGg5Nn4hXl0a8CzHeUrGUgV"
         else:
