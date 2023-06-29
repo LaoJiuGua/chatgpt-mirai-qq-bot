@@ -31,7 +31,8 @@ class DouYinBellePlugin(BaseComponentPlugin):
         re_obj = message_parameter.get("re_obj")
         title = re_obj.groups(1)
         # message = MessageSegment.video(self.get_girl_url(title))
-        message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV", cache=True)
+        message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
+                                       cache=False)
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
