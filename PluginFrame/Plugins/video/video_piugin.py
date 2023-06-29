@@ -16,11 +16,11 @@ from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
 
 
-@registration_directive(matching=r'^#(美女视频|菠萝拌饭|帅哥视频)', message_types=("private", "group"))
+@registration_directive(matching=r'^#(美女视频|菠萝拌饭|帅哥视频|西施美女|蹲下变装|体操服系|你的欲梦)', message_types=("private", "group"))
 class DouYinBellePlugin(BaseComponentPlugin):
     __name__ = 'DouYinBellePlugin'
     desc = "抖音MM短视频"
-    docs = '#美女视频 / #菠萝拌饭 / #轻松一刻'
+    docs = '#美女视频|菠萝拌饭|帅哥视频|西施美女|蹲下变装|体操服系|你的欲梦'
     permissions = ("all",)
     plu_name = '视频插件'
 
