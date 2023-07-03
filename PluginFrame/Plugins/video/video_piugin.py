@@ -8,12 +8,27 @@ from io import BytesIO
 import requests
 from loguru import logger
 from PIL import Image
+from typing import Optional, Any, Dict
 from PluginFrame.Plugins import BaseComponentPlugin
 from PluginFrame.plugin_constant import choose_data, set_choose_data, get_choose_data, del_choose_data, get_manager_qq, \
     path
 from PluginFrame.plugins_conf import registration_directive
 from cqhttp.api import CQApiConfig
 from cqhttp.request_model import MessageSegment, SendPrivateMsgRequest, SendGroupMsgRequest, GetMessage
+
+def _optionally_strfy(x: Optional[Any]) -> Optional[str]:
+    if x is not None:
+        if isinstance(x, bool):
+            x = int(x)  # turn boolean to 0/1
+        x = str(x)
+    return x
+
+def _remove_optional(d: Dict[str, Optional[str]]) -> Dict[str, str]:
+    """改变原参数。"""
+    for k in tuple(d.keys()):
+        if d[k] is None:
+            del d[k]
+    return d  # type: ignore
 
 
 @registration_directive(matching=r'^#(美女视频|菠萝拌饭|帅哥视频|西施美女|蹲下变装|体操服系|你的欲梦)', message_types=("private", "group"))
@@ -30,9 +45,20 @@ class DouYinBellePlugin(BaseComponentPlugin):
         sender = message_info.sender
         re_obj = message_parameter.get("re_obj")
         title = re_obj.group(1)
+
+        message = MessageSegment(type_='video',
+                                      data=_remove_optional({
+                                          'file': "https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
+                                          'cover': "https://image.52xiaobei.cn/image/video_blog.jpg",
+                                          'cache': _optionally_strfy(False),
+                                          'proxy': _optionally_strfy(None),
+                                          'timeout': _optionally_strfy(None),
+                                          }))
+
+
         # message = MessageSegment.video(self.get_girl_url(title))
-        message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
-                                       cache=False)
+        # message = MessageSegment.video(f"https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
+        #                                cache=False)
         if message_info.get("message_type") == "group":
             await SendGroupMsgRequest(group_id=message_info.get("group_id"), message=message).send_request(
                 CQApiConfig.message.send_group_msg.Api
