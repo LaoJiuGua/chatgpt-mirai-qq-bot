@@ -48,7 +48,7 @@ class DouYinBellePlugin(BaseComponentPlugin):
 
         message = MessageSegment(type_='video',
                                       data=_remove_optional({
-                                          'file': "https://api.caonm.net/api/cdmn/m?lx={title}&key=d73IGg5Nn4hXl0a8CzHeUrGUgV",
+                                          'file': "http://xin-hao.top/sqlWork/randomDouyin",
                                           'cover': "https://image.52xiaobei.cn/image/video_blog.jpg",
                                           'cache': _optionally_strfy(False),
                                           'proxy': _optionally_strfy(None),
