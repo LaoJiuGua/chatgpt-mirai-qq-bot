@@ -360,6 +360,8 @@ async def text_to_image(text, qr_code=None):
     return image
 
 async def to_image(text, qr_code=None) -> GraiaImage:
+    if not qr_code:
+        qr_code="https://file.52xiaobei.cn/bFxrC3Wet70up4PB4sFV1FCXHCsud4JA/logo.png"
     img = await text_to_image(text=str(text), qr_code=qr_code)
     b = BytesIO()
     img.save(b, format="png")
