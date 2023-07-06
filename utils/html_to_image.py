@@ -373,10 +373,10 @@ def html_to_png(template_name, data):
             return base64.b64encode(b.getvalue()).decode()
 
         except Exception as e:
-            logger.error("Markdown 渲染失败")
+            logger.error(f"Markdown 渲染失败--{e}")
 
 
 
-# if __name__ == "__main__":
-    # data = {'音频插件': {'MusicPlugin': '点歌系统（网易云）'}, 'BOT管理插件': {'DelFriendBlacklistPlugin': '移除禁用某QQ使用机器人'}, '表情包插件': {'EmoticonListPlugin': '表情包列表'}, 'ChatGpt插件': {'privateMessage': '私聊GPT回答机器人'}, 'QQ群提示插件': {'DelGroupExitPlugin': '关闭退群提醒'}, '帮助插件': {'ListPlugin': '插件列表'}, '图片插件': {'ImageVariationPlugin': '图片放大/缩小'}, '网络插件': {'PingHostPlugin': 'Ping域名'}, '娱乐插件': {'AnimeWallpapersPlugin': '舔狗日记'}, '塔罗牌插件': {'TarotFormationPlugin': '塔罗牌阵'}, '视频插件': {'VideoPlugin': '视频搜索(支持动漫、电影)'}}
-    # print(html_to_png("help", data))
+if __name__ == "__main__":
+    data = {'音频插件': {'MusicPlugin': '点歌系统（网易云）'}, 'BOT管理插件': {'DelFriendBlacklistPlugin': '移除禁用某QQ使用机器人'}, '表情包插件': {'EmoticonListPlugin': '表情包列表'}, 'ChatGpt插件': {'privateMessage': '私聊GPT回答机器人'}, 'QQ群提示插件': {'DelGroupExitPlugin': '关闭退群提醒'}, '帮助插件': {'ListPlugin': '插件列表'}, '图片插件': {'ImageVariationPlugin': '图片放大/缩小'}, '网络插件': {'PingHostPlugin': 'Ping域名'}, '娱乐插件': {'AnimeWallpapersPlugin': '舔狗日记'}, '塔罗牌插件': {'TarotFormationPlugin': '塔罗牌阵'}, '视频插件': {'VideoPlugin': '视频搜索(支持动漫、电影)'}}
+    print(html_to_png("help", data))
