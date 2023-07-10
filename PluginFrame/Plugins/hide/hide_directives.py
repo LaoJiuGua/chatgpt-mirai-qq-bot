@@ -13,25 +13,25 @@ from constants import config, botManager
 from manager.bot import BotManager
 
 
-@registration_directive(matching=r'#重启', message_types=("private", "group"))
-class RebootPlugin(BaseComponentPlugin):
-    __name__ = 'RebootPlugin'
-    desc = ""
-    docs = ""
-    permissions = ("admin", )
-    plu_name = ''
-
-    async def start(self, message_parameter):
-        event = message_parameter.get("event")
-        bot = message_parameter.get("bot")
-
-        constants.config = config.load_config()
-        config.scan_presets()
-        await bot.send(event, "配置文件重新载入完毕！")
-        await bot.send(event, "重新登录账号中，详情请看控制台日志……")
-        constants.botManager = BotManager(config)
-        await botManager.login()
-        await bot.send(event, "登录结束")
+# @registration_directive(matching=r'#重启', message_types=("private", "group"))
+# class RebootPlugin(BaseComponentPlugin):
+#     __name__ = 'RebootPlugin'
+#     desc = ""
+#     docs = ""
+#     permissions = ("admin", )
+#     plu_name = ''
+#
+#     async def start(self, message_parameter):
+#
+#         event = message_parameter.get("event")
+#         bot = message_parameter.get("bot")
+#         constants.config = config.load_config()
+#         config.scan_presets()
+#         await bot.send(event, "配置文件重新载入完毕！")
+#         await bot.send(event, "重新登录账号中，详情请看控制台日志……")
+#         constants.botManager = BotManager(config)
+#         await botManager.login()
+#         await bot.send(event, "登录结束")
 
 
 @registration_directive(matching=r'^\[CQ:reply,id=(-\d+|\d+)\](\[CQ:at,qq=(\d+)\]|)(| )撤回',

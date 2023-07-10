@@ -50,7 +50,7 @@ class GroupMessagePlugin(BaseComponentPlugin):
         await handle_message(
             self.response(event, True, bot),
             f"group-{event.group_id}",
-            event.message,
+            re_obj.group(2),
             chain,
             is_manager=event.user_id == config.onebot.manager_qq,
             nickname=event.sender.get("nickname", "群友")

@@ -104,7 +104,6 @@ async def handle_message(_respond: Callable, session_id: str, message: str,
         """
 
         task = None
-
         # 不带前缀 - 正常初始化会话
         if bot_type_search := re.search(config.trigger.switch_command, prompt):
             if not (config.trigger.allow_switching_ai or is_manager):
@@ -210,42 +209,81 @@ async def handle_message(_respond: Callable, session_id: str, message: str,
             # 隐式加载不回复预设内容
             async for _ in conversation_context.load_preset('default'): ...
 
-            # 没有任务那就聊天吧！
-            if not task:
-                task = conversation_context.ask(prompt=prompt, chain=chain, name=nickname)
-            async for rendered in task:
-                if rendered:
-                    if not str(rendered).strip():
-                        logger.warning("检测到内容为空的输出，已忽略")
-                        continue
-                    action = lambda session_id, prompt, rendered, respond: respond(rendered)
-                    for m in middlewares:
-                        action = wrap_respond(action, m)
+        # 没有任务那就聊天吧！
+        if not task:
+            task = conversation_context.ask(prompt=prompt, chain=chain, name=nickname)
+        async for rendered in task:
+            if rendered:
+                if not str(rendered).strip():
+                    logger.warning("检测到内容为空的输出，已忽略")
+                    continue
+                action = lambda session_id, prompt, rendered, respond: respond(rendered)
+                for m in middlewares:
+                    action = wrap_respond(action, m)
 
-                    # 开始处理 handle_response
-                    await action(session_id, prompt, rendered, respond)
-            for m in middlewares:
-                await m.handle_respond_completed(session_id, prompt, respond)
-        except CommandRefusedException as e:
-            await respond(str(e))
-        except openai.error.InvalidRequestError as e:
-            await respond(f"服务器拒绝了您的请求，原因是{str(e)}")
-        except BotOperationNotSupportedException:
-            await respond("暂不支持此操作，抱歉！")
-        except ConcurrentMessageException as e:  # Chatbot 账号同时收到多条消息
-            await respond(config.response.error_request_concurrent_error)
-        except (BotRatelimitException, HTTPStatusError) as e:  # Chatbot 账号限流
-            await respond(config.response.error_request_too_many.format(exc=e))
-        except NoAvailableBotException as e:  # 预设不存在
-            await respond(f"当前没有可用的{e}账号，不支持使用此 AI！")
-        except BotTypeNotFoundException as e:  # 预设不存在
-            respond_msg = f"AI类型{e}不存在，请检查你的输入是否有问题！目前仅支持：\n"
-            respond_msg += botManager.bots_info()
-            await respond(respond_msg)
-        except PresetNotFoundException:  # 预设不存在
-            await respond("预设不存在，请检查你的输入是否有问题！")
-        except (RequestException, SSLError, ProxyError, MaxRetryError, ConnectTimeout, ConnectTimeout) as e:  # 网络异常
-            await respond(config.response.error_network_failure.format(exc=e))
-        except Exception as e:  # 未处理的异常
-            logger.exception(e)
-            await respond(config.response.error_format.format(exc=e))
+                # 开始处理 handle_response
+                await action(session_id, prompt, rendered, respond)
+        for m in middlewares:
+            await m.handle_respond_completed(session_id, prompt, respond)
+
+    try:
+        if not message.strip():
+            return await respond(config.response.placeholder)
+
+        for r in config.trigger.ignore_regex:
+            if re.match(r, message):
+                logger.debug(f"此消息满足正则表达式： {r}，忽略……")
+                return
+
+        # 此处为会话不存在时可以执行的指令
+        conversation_handler = await ConversationHandler.get_handler(session_id)
+        # 指定前缀对话
+        if ' ' in message and (config.trigger.allow_switching_ai or is_manager):
+            for ai_type, prefixes in config.trigger.prefix_ai.items():
+                for prefix in prefixes:
+                    if f'{prefix} ' in message:
+                        conversation_context = await conversation_handler.first_or_create(ai_type)
+                        message = message.removeprefix(f'{prefix} ')
+                        break
+                else:
+                    # Continue if the inner loop wasn't broken.
+                    continue
+                # Inner loop was broken, break the outer.
+                break
+        if not conversation_handler.current_conversation:
+            conversation_handler.current_conversation = await conversation_handler.create(
+                config.response.default_ai)
+
+        action = request
+        for m in middlewares:
+            action = wrap_request(action, m)
+
+        # 开始处理
+        await action(session_id, message.strip(), conversation_context, respond)
+    except DrawingFailedException as e:
+        logger.exception(e)
+        await respond(config.response.error_drawing.format(exc=e.__cause__ or '未知'))
+    except CommandRefusedException as e:
+        await respond(str(e))
+    except openai.error.InvalidRequestError as e:
+        await respond(f"服务器拒绝了您的请求，原因是： {str(e)}")
+    except BotOperationNotSupportedException:
+        await respond("暂不支持此操作，抱歉！")
+    except ConcurrentMessageException as e:  # Chatbot 账号同时收到多条消息
+        await respond(config.response.error_request_concurrent_error)
+    except BotRatelimitException as e:  # Chatbot 账号限流
+        await respond(config.response.error_request_too_many.format(exc=e))
+    except NoAvailableBotException as e:  # 预设不存在
+        await respond(f"当前没有可用的{e}账号，不支持使用此 AI！")
+    except BotTypeNotFoundException as e:  # 预设不存在
+        respond_msg = f"AI类型{e}不存在，请检查你的输入是否有问题！目前仅支持：\n"
+        respond_msg += botManager.bots_info()
+        await respond(respond_msg)
+    except PresetNotFoundException:  # 预设不存在
+        await respond("预设不存在，请检查你的输入是否有问题！")
+    except (RequestException, SSLError, ProxyError, MaxRetryError, ConnectTimeout, ConnectTimeout,
+            httpcore.ReadTimeout) as e:  # 网络异常
+        await respond(config.response.error_network_failure.format(exc=e))
+    except Exception as e:  # 未处理的异常
+        logger.exception(e)
+        await respond(config.response.error_format.format(exc=e))
