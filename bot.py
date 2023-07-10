@@ -8,6 +8,7 @@ import asyncio
 from utils.exithooks import hook
 from loguru import logger
 from constants import config, botManager
+from utils.edge_tts import load_edge_tts_voices
 
 hook()
 
@@ -16,6 +17,11 @@ loop = creart.create(AbstractEventLoop)
 loop.run_until_complete(botManager.login())
 
 bots = []
+
+if config.mirai:
+    logger.info("检测到 mirai 配置，将启动 mirai 模式……")
+    from platforms.ariadne_bot import start_task
+    bots.append(loop.create_task(start_task()))
 
 if config.onebot:
     logger.info("检测到 Onebot 配置，将启动 Onebot 模式……")
@@ -34,10 +40,13 @@ if config.http:
     logger.info("检测到 http 配置，将启动 http service 模式……")
     from platforms.http_service import start_task
     bots.append(loop.create_task(start_task()))
-if config.mirai:
-    logger.info("检测到 mirai 配置，将启动 mirai 模式……")
-    from platforms.ariadne_bot import start_task
-    bots.append(loop.create_task(start_task()))
+try:
+    logger.info("[Edge TTS] 读取 Edge TTS 可用音色列表……")
+    loop.run_until_complete(load_edge_tts_voices())
+    logger.info("[Edge TTS] 读取成功！")
+except Exception as e:
+    logger.exception(e)
+    logger.error("[Edge TTS] 读取失败！")
 
 loop.run_until_complete(asyncio.gather(*bots))
 loop.run_forever()

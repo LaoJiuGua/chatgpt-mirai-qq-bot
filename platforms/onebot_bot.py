@@ -1,11 +1,13 @@
 import re
 import time
+from base64 import b64decode, b64encode
 from typing import Union, Optional
 
+import aiohttp
 from aiocqhttp import CQHttp, Event, MessageSegment
 from charset_normalizer import from_bytes
 from graia.ariadne.message.chain import MessageChain
-from graia.ariadne.message.element import Image, At, Plain, Voice
+from graia.ariadne.message.element import Image as GraiaImage, At, Plain, Voice
 from graia.ariadne.message.parser.base import DetectPrefix
 from graia.broadcast import ExecutionStop
 from loguru import logger
@@ -36,6 +38,28 @@ class MentionMe:
         raise ExecutionStop
 
 
+class Image(GraiaImage):
+    async def get_bytes(self) -> bytes:
+        """尝试获取消息元素的 bytes, 注意, 你无法获取并不包含 url 且不包含 base64 属性的本元素的 bytes.
+
+        Raises:
+            ValueError: 你尝试获取并不包含 url 属性的本元素的 bytes.
+
+        Returns:
+            bytes: 元素原始数据
+        """
+        if self.base64:
+            return b64decode(self.base64)
+        if not self.url:
+            raise ValueError("you should offer a url.")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as response:
+                response.raise_for_status()
+                data = await response.read()
+                self.base64 = b64encode(data).decode("ascii")
+                return data
+
+
 # TODO: use MessageSegment
 # https://github.com/nonebot/aiocqhttp/blob/master/docs/common-topics.md
 def transform_message_chain(text: str) -> MessageChain:
@@ -59,8 +83,11 @@ def transform_message_chain(text: str) -> MessageChain:
             if text_segment and not text_segment.startswith('[CQ:reply,'):
                 messages.append(Plain(text_segment))
             if cq_type == "at":
+                if params.get('qq') == 'all':
+                    continue
                 params["target"] = int(params.pop("qq"))
-            messages.append(message_class(**params))
+            elem = message_class(**params)
+            messages.append(elem)
             start = match.end()
     if text_segment := text[start:]:
         messages.append(Plain(text_segment))
@@ -71,7 +98,7 @@ def transform_message_chain(text: str) -> MessageChain:
 def transform_from_message_chain(chain: MessageChain):
     result = ''
     for elem in chain:
-        if isinstance(elem, Image):
+        if isinstance(elem, (Image, GraiaImage)):
             result = result + MessageSegment.image(f"base64://{elem.base64}")
         elif isinstance(elem, (Plain, str)):
             result = result + MessageSegment.text(str(elem))
@@ -130,7 +157,7 @@ async def _(event: Event):
             nickname=event.sender.get("nickname", "好友")
         )
     except Exception as e:
-        print(e)
+        logger.exception(e)
 
 
 GroupTrigger = [MentionMe(config.trigger.require_mention != "at"), DetectPrefix(
@@ -197,6 +224,25 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    pattern = r"\.设置\s+(\w+)\s+(\S+)\s+画图额度为\s+(\d+)\s+个/小时"
+    match = re.match(pattern, event.message.strip())
+    if not match:
+        return
+    if event.user_id != config.onebot.manager_qq:
+        return await bot.send(event, "您没有权限执行这个操作")
+    msg_type, msg_id, rate = match.groups()
+    rate = int(rate)
+
+    if msg_type not in ["群组", "好友"]:
+        return await bot.send(event, "类型异常，仅支持设定【群组】或【好友】的额度")
+    if msg_id != '默认' and not msg_id.isdecimal():
+        return await bot.send(event, "目标异常，仅支持设定【默认】或【指定 QQ（群）号】的额度")
+    ratelimit_manager.update_draw(msg_type, msg_id, rate)
+    return await bot.send(event, "额度更新成功！")
+
+
+@bot.on_message()
+async def _(event: Event):
     pattern = r"\.查看\s+(\w+)\s+(\S+)\s+的使用情况"
     match = re.match(pattern, event.message.strip())
     if not match:
@@ -215,6 +261,28 @@ async def _(event: Event):
     current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
     return await bot.send(event,
                           f"{msg_type} {msg_id} 的额度使用情况：{limit['rate']}条/小时， 当前已发送：{usage['count']}条消息\n整点重置，当前服务器时间：{current_time}")
+
+
+@bot.on_message()
+async def _(event: Event):
+    pattern = r"\.查看\s+(\w+)\s+(\S+)\s+的画图使用情况"
+    match = re.match(pattern, event.message.strip())
+    if not match:
+        return
+
+    msg_type, msg_id = match.groups()
+
+    if msg_type not in ["群组", "好友"]:
+        return await bot.send(event, "类型异常，仅支持设定【群组】或【好友】的额度")
+    if msg_id != '默认' and not msg_id.isdecimal():
+        return await bot.send(event, "目标异常，仅支持设定【默认】或【指定 QQ（群）号】的额度")
+    limit = ratelimit_manager.get_draw_limit(msg_type, msg_id)
+    if limit is None:
+        return await bot.send(event, f"{msg_type} {msg_id} 没有额度限制。")
+    usage = ratelimit_manager.get_draw_usage(msg_type, msg_id)
+    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+    return await bot.send(event,
+                          f"{msg_type} {msg_id} 的额度使用情况：{limit['rate']}个图/小时， 当前已绘制：{usage['count']}个图\n整点重置，当前服务器时间：{current_time}")
 
 
 @bot.on_message()

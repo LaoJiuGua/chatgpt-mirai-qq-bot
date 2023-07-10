@@ -70,7 +70,7 @@ class OpenAIGPT3Params(BaseModel):
 
 
 class OpenAIAuths(BaseModel):
-    browserless_endpoint: Optional[str] = None
+    browserless_endpoint: Optional[str] = "https://chatgpt-proxy.lss233.com/api/"
     """自定义无浏览器登录模式的接入点"""
     api_endpoint: Optional[str] = None
     """自定义 OpenAI API 的接入点"""
@@ -194,8 +194,12 @@ class BardAuths(BaseModel):
 
 
 class YiyanCookiePath(BaseModel):
-    cookie_content: str
-    """"文心一言网站的 Cookie 内容"""
+    BDUSS: Optional[str] = None
+    """百度 Cookie 中的 BDUSS 字段"""
+    BAIDUID: Optional[str] = None
+    """百度 Cookie 中的 BAIDUID 字段"""
+    cookie_content: Optional[str] = None
+    """百度 Cookie （已弃用）"""
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
 
@@ -217,6 +221,25 @@ class ChatGLMAPI(BaseModel):
 class ChatGLMAuths(BaseModel):
     accounts: List[ChatGLMAPI] = []
     """ChatGLM的账号列表"""
+
+
+class SlackAppAccessToken(BaseModel):
+    channel_id: str
+    """负责与机器人交互的 Channel ID"""
+
+    access_token: str
+    """安装 Slack App 时获得的 access_token"""
+
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
+
+    app_endpoint: str = "https://chatgpt-proxy.lss233.com/claude-in-slack/backend-api/"
+    """API 的接入点"""
+
+
+class SlackAuths(BaseModel):
+    accounts: List[SlackAppAccessToken] = []
+    """Slack App 账号信息"""
 
 
 class TextToImage(BaseModel):
@@ -242,8 +265,10 @@ class TextToSpeech(BaseModel):
     """设置后所有的会话都会转语音再发一次"""
     engine: str = "azure"
     """文字转语音引擎选择，当前有azure和vits"""
-    default: str = "zh-CN-XiaoyanNeural"
+    default: str = "zh-CN-XiaoxiaoNeural"
     """默认设置为Azure语音音色"""
+    default_voice_prefix: List[str] = ["zh-CN", "zh-TW"]
+    """默认的提示音色前缀"""
 
 
 class AzureConfig(BaseModel):
@@ -336,6 +361,8 @@ class Response(BaseModel):
     error_server_overloaded: str = "抱歉，当前服务器压力有点大，请稍后再找我吧！"
     """服务器提示 429 错误时的回复 """
 
+    error_drawing: str = "画图失败！原因： {exc}"
+
     placeholder: str = (
         "您好！我是 Assistant，一个由 OpenAI 训练的大型语言模型。我不是真正的人，而是一个计算机程序，可以通过文本聊天来帮助您解决问题。如果您有任何问题，请随时告诉我，我将尽力回答。\n"
         "如果您需要重置我们的会话，请回复`重置会话`。"
@@ -378,8 +405,11 @@ class Response(BaseModel):
     queued_notice: str = "消息已收到！当前我还有{queue_size}条消息要回复，请您稍等。"
     """新消息进入队列时，发送的通知。 queue_size 是当前排队的消息数"""
 
-    ping_response: str = "当前AI：{current_ai}\n当前可用AI（输入此命令切换：切换AI XXX）：\n{supported_ai}"
+    ping_response: str = "当前AI：{current_ai} / 当前语音：{current_voice}\n指令：\n切换AI XXX / 切换语音 XXX" \
+                         "\n\n可用AI：\n{supported_ai}"
     """ping返回内容"""
+    ping_tts_response: str = "\n可用语音：\n{supported_tts}"
+    """ping tts 返回"""
 
 
 class System(BaseModel):
@@ -420,6 +450,12 @@ class Ratelimit(BaseModel):
     exceed: str = "已达到额度限制，请等待下一小时继续和我对话。"
     """超额消息"""
 
+    draw_warning_msg: str = "\n\n警告：额度即将耗尽！\n目前已画：{usage}个图，最大限制为{limit}个图/小时，请调整您的节奏。\n额度限制整点重置，当前服务器时间：{current_time}"
+    """警告消息"""
+
+    draw_exceed: str = "已达到额度限制，请等待下一小时再使用画图功能。"
+    """超额消息"""
+
 
 class SDWebUI(BaseModel):
     api_url: str
@@ -430,8 +466,22 @@ class SDWebUI(BaseModel):
     """负面提示词"""
     sampler_index: str = 'DPM++ SDE Karras'
     filter_nsfw: bool = True
+    denoising_strength: float = 0.45
+    steps: int = 25
+    enable_hr: bool = False
+    seed: int = -1
+    batch_size: int = 1
+    n_iter: int = 1
+    cfg_scale: float = 7.5
+    restore_faces: bool = False
+    authorization: str = ''
+    """登录api的账号:密码"""
+
     timeout: float = 10.0
     """超时时间"""
+
+    class Config(BaseConfig):
+        extra = Extra.allow
 
 
 class Baai(BaseModel):
@@ -454,6 +504,7 @@ class Config(BaseModel):
     yiyan: YiyanAuths = YiyanAuths()
     chatglm: ChatGLMAuths = ChatGLMAuths()
     poe: PoeAuths = PoeAuths()
+    slack: SlackAuths = SlackAuths()
 
     # === Response Settings ===
     text_to_image: TextToImage = TextToImage()
@@ -522,11 +573,12 @@ class Config(BaseModel):
 
     @staticmethod
     def load_config() -> Config:
+        if env_config := os.environ.get('CHATGPT_FOR_BOT_FULL_CONFIG', ''):
+            return Config.parse_obj(toml.loads(env_config))
         try:
-            import os
             if (
-                not os.path.exists('config.cfg')
-                or os.path.getsize('config.cfg') <= 0
+                    not os.path.exists('config.cfg')
+                    or os.path.getsize('config.cfg') <= 0
             ) and os.path.exists('config.json'):
                 logger.info("正在转换旧版配置文件……")
                 Config.save_config(Config.__load_json_config())
